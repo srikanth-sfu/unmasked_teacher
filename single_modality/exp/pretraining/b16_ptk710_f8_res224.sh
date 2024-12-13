@@ -1,8 +1,8 @@
 export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
-JOB_NAME='b16_k710'
-OUTPUT_DIR="$(dirname $0)/$JOB_NAME"
+JOB_NAME='baseline_b16_ucf_hmdb'
+OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/pretrain/$JOB_NAME"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='your_data_path/k710/train.csv'
 
