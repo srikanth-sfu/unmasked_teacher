@@ -6,18 +6,7 @@ OUTPUT_DIR="$(dirname $0)/$JOB_NAME"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='your_data_path/k710/train.csv'
 
-PARTITION='video'
-GPUS=32
-GPUS_PER_NODE=8
-CPUS_PER_TASK=14
-
-srun -p $PARTITION \
-    --job-name=${JOB_NAME} \
-    --gres=gpu:${GPUS_PER_NODE} \
-    --ntasks=${GPUS} \
-    --ntasks-per-node=${GPUS_PER_NODE} \
-    --cpus-per-task=${CPUS_PER_TASK} \
-    python -u run_umt_pretraining.py \
+python -u run_umt_pretraining.py \
     --data_path ${DATA_PATH} \
     --num_sample 1 \
     --split ',' \

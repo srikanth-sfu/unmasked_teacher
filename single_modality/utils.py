@@ -320,7 +320,7 @@ def init_distributed_mode(args):
     elif 'SLURM_PROCID' in os.environ:
         args.rank = int(os.environ['SLURM_PROCID'])
         args.gpu = int(os.environ['SLURM_LOCALID'])
-        args.world_size = int(os.environ['SLURM_NTASKS'])
+        args.world_size = 1 #int(os.environ['SLURM_NTASKS'])
         os.environ['RANK'] = str(args.rank)
         os.environ['LOCAL_RANK'] = str(args.gpu)
         os.environ['WORLD_SIZE'] = str(args.world_size)
