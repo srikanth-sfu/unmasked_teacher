@@ -40,5 +40,6 @@ python -u run_umt_pretraining.py \
     --epochs 50 \
     --use_checkpoint \
     --checkpoint_num 8 \
+    --pin_memory \
     --log_dir ${OUTPUT_DIR} \
     --output_dir ${OUTPUT_DIR}
