@@ -8,7 +8,7 @@ DATA_PATH='video_splits/hmdb51_train_hmdb_ucf.csv'
 
 python -u run_umt_pretraining.py \
     --data_path ${DATA_PATH} \
-    --prefix ${SLURM_TMPDIR}/data/ucf_hmdb/
+    --prefix ${SLURM_TMPDIR}/data/ucf_hmdb/ \
     --num_sample 1 \
     --split ',' \
     --flip True \
@@ -38,5 +38,6 @@ python -u run_umt_pretraining.py \
     --warmup_epochs 40 \
     --save_ckpt_freq 1000 \
     --epochs 50 \
+    --use_checkpoint \
     --log_dir ${OUTPUT_DIR} \
     --output_dir ${OUTPUT_DIR}
