@@ -26,7 +26,7 @@ python -u run_umt_pretraining.py \
     --clip_return_interval 1 \
     --clip_student_return_interval 1 \
     --tubelet_size 1 \
-    --lr 1.5e-5 \
+    --lr 1.5e-4 \
     --drop_path 0.1 \
     --batch_size 256 \
     --num_segments 8 \
@@ -35,9 +35,10 @@ python -u run_umt_pretraining.py \
     --num_workers 12 \
     --opt adamw \
     --opt_betas 0.9 0.95 \
-    --warmup_epochs 40 \
+    --warmup_epochs 10 \
     --save_ckpt_freq 1000 \
     --epochs 50 \
     --use_checkpoint \
+    --checkpoint_num 8 \
     --log_dir ${OUTPUT_DIR} \
     --output_dir ${OUTPUT_DIR}
