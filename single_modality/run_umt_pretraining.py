@@ -44,6 +44,9 @@ def get_args():
                         help='temporal tube size for the patch embedding')
     parser.add_argument('--use_learnable_pos_emb', action='store_true')
     parser.set_defaults(use_learnable_pos_emb=False)
+    parser.add_argument('--k710_weights', default='/project/def-mpederso/smuralid/checkpoints/umt/b16_ptk710_ftk710_f8_res224.pth', type=str)
+    parser.add_argument('--model_key', default='model|module', type=str)
+
 
     # CLIP decpder parameters
     parser.add_argument('--clip_teacher', default='clip_b16', type=str,
@@ -197,6 +200,19 @@ def main(args):
     print("Tubelet size = %s" % str(args.tubelet_size))
     args.window_size = (args.num_frames // args.tubelet_size, args.input_size // patch_size[0], args.input_size // patch_size[1])
     args.patch_size = patch_size
+
+    
+    checkpoint = torch.load(args.k710_weights, map_location='cpu')
+
+    print("Load ckpt from %s" % args.k710_weights)
+    checkpoint_model = None
+    for model_key in args.model_key.split('|'):
+        if model_key in checkpoint:
+            checkpoint_model = checkpoint[model_key]
+            print("Load state_dict by model_key = %s" % model_key)
+            break
+    if checkpoint_model is None:
+        checkpoint_model = checkpoint
 
     # teacher model
     print(f'Teacher model: {args.clip_teacher}')
