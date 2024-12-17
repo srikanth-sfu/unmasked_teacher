@@ -286,7 +286,6 @@ def main(args):
     )
 
     # get dataset
-    import ipdb; ipdb.set_trace()
     dataset_train = build_pretraining_dataset(args)
 
     num_tasks = utils.get_world_size()
