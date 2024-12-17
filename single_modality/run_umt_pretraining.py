@@ -215,17 +215,14 @@ def main(args):
     if checkpoint_model is None:
         checkpoint_model = checkpoint
 
-    print("Removing head from pretrained checkpoint")
-    del checkpoint_model['head.weight']
-    del checkpoint_model['head.bias']
     
     all_keys = list(checkpoint_model.keys())
     new_dict = OrderedDict()
     for key in all_keys:
         if key.startswith('backbone.'):
-            new_dict[key[9:]] = checkpoint_model[key]
+            new_dict[key] = checkpoint_model[key]
         elif key.startswith('encoder.'):
-            new_dict[key[8:]] = checkpoint_model[key]
+            new_dict[key] = checkpoint_model[key]
         else:
             new_dict[key] = checkpoint_model[key]
     checkpoint_model = new_dict
@@ -272,7 +269,6 @@ def main(args):
             checkpoint_model['pos_embed'] = new_pos_embed
 
     utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix)
-    import ipdb; ipdb.set_trace()
 
 
     # teacher model
@@ -289,6 +285,7 @@ def main(args):
     )
 
     # get dataset
+    import ipdb; ipdb.set_trace()
     dataset_train = build_pretraining_dataset(args)
 
     num_tasks = utils.get_world_size()
