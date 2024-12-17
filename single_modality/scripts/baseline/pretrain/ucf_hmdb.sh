@@ -29,7 +29,7 @@ cd unmasked_teacher
 git checkout baseline_pretrain
 cd single_modality
 
-timeout 170m exp/pretraining/b16_ptucfhmdb_f8_res224.sh
+timeout 170m bash exp/pretraining/b16_ptucfhmdb_f8_res224.sh
  
 if [ $? -eq 124 ]; then
   echo "The script timed out after ${MAX_HOURS} hour(s). Restarting..."
