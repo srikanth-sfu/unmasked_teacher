@@ -6,6 +6,12 @@ OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/pretrain/$JOB_NAME"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/hmdb51_train_hmdb_ucf.csv'
 
+# srun -p $PARTITION \
+#         --job-name=${JOB_NAME} \
+#         --gres=gpu:${GPUS_PER_NODE} \
+#         --ntasks=${GPUS} \
+#         --ntasks-per-node=${GPUS_PER_NODE} \
+#         --cpus-per-task=${CPUS_PER_TASK} \
 python -u run_umt_pretraining.py \
     --data_path ${DATA_PATH} \
     --prefix ${SLURM_TMPDIR}/data/ucf_hmdb/ \
