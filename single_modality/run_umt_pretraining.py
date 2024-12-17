@@ -205,7 +205,6 @@ def main(args):
     checkpoint = torch.load(args.k710_weights, map_location='cpu')
 
     print("Load ckpt from %s" % args.k710_weights)
-    import ipdb; ipdb.set_trace()
     checkpoint_model = None
     for model_key in args.model_key.split('|'):
         if model_key in checkpoint:
@@ -272,6 +271,7 @@ def main(args):
             checkpoint_model['pos_embed'] = new_pos_embed
 
     utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix)
+    import ipdb; ipdb.set_trace()
 
 
     # teacher model
