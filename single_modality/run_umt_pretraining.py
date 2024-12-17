@@ -44,7 +44,7 @@ def get_args():
                         help='temporal tube size for the patch embedding')
     parser.add_argument('--use_learnable_pos_emb', action='store_true')
     parser.set_defaults(use_learnable_pos_emb=False)
-    parser.add_argument('--k710_weights', default='/project/def-mpederso/smuralid/checkpoints/umt/b16_ptk710_ftk710_f8_res224.pth', type=str)
+    parser.add_argument('--k710_weights', default='/project/def-mpederso/smuralid/checkpoints/umt/b16_ptk710_f8_res224.pth', type=str)
     parser.add_argument('--model_key', default='model|module', type=str)
     parser.add_argument('--model_prefix', default='', type=str)
 
