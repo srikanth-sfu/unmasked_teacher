@@ -12,7 +12,7 @@ DATA_PATH='video_splits/hmdb51_train_hmdb_ucf.csv'
 #         --ntasks=${GPUS} \
 #         --ntasks-per-node=${GPUS_PER_NODE} \
 #         --cpus-per-task=${CPUS_PER_TASK} \
-python -u run_umt_pretraining.py \
+python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py \
     --data_path ${DATA_PATH} \
     --prefix ${SLURM_TMPDIR}/data/ucf_hmdb/ \
     --num_sample 1 \
