@@ -45,7 +45,7 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py 
     --save_ckpt_freq 1000 \
     --epochs 50 \
     --use_checkpoint \
-    --checkpoint_num 8 \
+    --checkpoint_num 4 \
     --pin_mem \
     --log_dir ${OUTPUT_DIR} \
     --output_dir ${OUTPUT_DIR} \
