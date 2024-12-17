@@ -292,7 +292,7 @@ def main(args):
     global_rank = utils.get_rank()
     sampler_rank = global_rank
     num_training_steps_per_epoch = len(dataset_train) // args.batch_size // num_tasks
-
+    print("NUM TRAINING STEPS PER EPOCH:", num_training_steps_per_epoch)
     sampler_train = torch.utils.data.DistributedSampler(dataset_train, num_replicas=num_tasks, rank=sampler_rank, shuffle=True)
     print("Sampler_train = %s" % str(sampler_train))
 
