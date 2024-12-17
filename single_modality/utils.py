@@ -308,7 +308,6 @@ def save_on_master(*args, **kwargs):
         torch.save(*args, **kwargs)
 
 def init_distributed_mode_new(args):
-    import ipdb; ipdb.set_trace()
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
         rank = int(os.environ["RANK"])
         world_size = int(os.environ['WORLD_SIZE'])
@@ -316,7 +315,9 @@ def init_distributed_mode_new(args):
     else:
         rank = -1
         world_size = -1
-    torch.cuda.set_device(args.gpu)
+    print(rank, world_size, local_rank)
+    os._exit(1)
+    torch.cuda.set_device(args.local_rank)
     args.dist_backend = 'nccl'
     print('| distributed init (rank {}): {}, gpu {}'.format(
         args.rank, args.dist_url, args.gpu), flush=True)
