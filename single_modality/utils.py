@@ -307,6 +307,23 @@ def save_on_master(*args, **kwargs):
     if is_main_process():
         torch.save(*args, **kwargs)
 
+def init_distributed_mode_new(args):
+    import ipdb; ipdb.set_trace()
+    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+        rank = int(os.environ["RANK"])
+        world_size = int(os.environ['WORLD_SIZE'])
+        print(f"RANK and WORLD_SIZE in environ: {rank}/{world_size}")
+    else:
+        rank = -1
+        world_size = -1
+    torch.cuda.set_device(args.gpu)
+    args.dist_backend = 'nccl'
+    print('| distributed init (rank {}): {}, gpu {}'.format(
+        args.rank, args.dist_url, args.gpu), flush=True)
+    torch.distributed.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
+                                         world_size=args.world_size, rank=args.rank)
+    torch.distributed.barrier()
+    setup_for_distributed(args.rank == 0)
 
 def init_distributed_mode(args):
     if args.dist_on_itp:
@@ -318,9 +335,6 @@ def init_distributed_mode(args):
         os.environ['RANK'] = str(args.rank)
         os.environ['WORLD_SIZE'] = str(args.world_size)
     elif 'SLURM_PROCID' in os.environ:
-        args.rank = int(os.environ.get('SLURM_PROCID', 0))  # Global rank, default to 0 if not set
-        args.gpu = args.rank % 4  # Map rank to GPU ID (0-3)
-        args.world_size = 4  # Total number of GPUs (processes)
 
         # Hardcoding SLURM environment variables
         os.environ['RANK'] = str(args.rank)
