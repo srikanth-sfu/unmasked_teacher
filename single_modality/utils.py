@@ -318,9 +318,11 @@ def init_distributed_mode(args):
         os.environ['RANK'] = str(args.rank)
         os.environ['WORLD_SIZE'] = str(args.world_size)
     elif 'SLURM_PROCID' in os.environ:
-        args.rank = int(os.environ['SLURM_PROCID'])
-        args.gpu = 0 #int(os.environ['SLURM_LOCALID'])
-        args.world_size = 4 #int(os.environ['SLURM_NTASKS'])
+        args.rank = int(os.environ.get('SLURM_PROCID', 0))  # Global rank, default to 0 if not set
+        args.gpu = args.rank % 4  # Map rank to GPU ID (0-3)
+        args.world_size = 4  # Total number of GPUs (processes)
+
+        # Hardcoding SLURM environment variables
         os.environ['RANK'] = str(args.rank)
         os.environ['LOCAL_RANK'] = str(args.gpu)
         os.environ['WORLD_SIZE'] = str(args.world_size)
