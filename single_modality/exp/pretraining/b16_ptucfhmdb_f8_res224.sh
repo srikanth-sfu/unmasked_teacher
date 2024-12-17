@@ -34,7 +34,7 @@ python -u run_umt_pretraining.py \
     --tubelet_size 1 \
     --lr 1.5e-4 \
     --drop_path 0.1 \
-    --batch_size 256 \
+    --batch_size 64 \
     --num_segments 8 \
     --num_frames 8 \
     --sampling_rate 1 \
