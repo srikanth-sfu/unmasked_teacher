@@ -316,7 +316,7 @@ def init_distributed_mode_new(args):
         args.rank = -1
         args.world_size = -1
     args.gpu = args.local_rank
-    print(args.rank, args.world_size, os.environ["LOCAL_RANK"] == args.local_rank)
+    print(args.rank, args.world_size, args.local_rank, os.environ["LOCAL_RANK"])
     torch.cuda.set_device(args.local_rank)
     args.dist_backend = 'nccl'
     print('| distributed init (rank {}): {}, gpu {}'.format(
