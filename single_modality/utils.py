@@ -315,7 +315,7 @@ def init_distributed_mode_new(args):
     else:
         rank = -1
         world_size = -1
-    print(rank, world_size, local_rank)
+    print(rank, world_size, args.local_rank)
     os._exit(1)
     torch.cuda.set_device(args.local_rank)
     args.dist_backend = 'nccl'
