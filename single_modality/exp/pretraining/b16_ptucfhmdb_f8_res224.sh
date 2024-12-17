@@ -42,4 +42,5 @@ python -u run_umt_pretraining.py \
     --checkpoint_num 8 \
     --pin_mem \
     --log_dir ${OUTPUT_DIR} \
-    --output_dir ${OUTPUT_DIR}
+    --output_dir ${OUTPUT_DIR} \
+    --video_ext avi

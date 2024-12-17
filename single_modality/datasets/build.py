@@ -64,7 +64,7 @@ def build_pretraining_dataset(args):
         setting=args.data_path,
         prefix=args.prefix,
         split=args.split,
-        video_ext='mp4',
+        video_ext=args.video_ext,
         is_color=True,
         modality='rgb',
         num_segments=args.num_segments,

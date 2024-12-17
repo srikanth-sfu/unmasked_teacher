@@ -118,6 +118,7 @@ def get_args():
 
     # Dataset parameters
     parser.add_argument('--prefix', default='', type=str, help='prefix for data')
+    parser.add_argument("--video_ext", default="mp4")
     parser.add_argument('--split', default=' ', type=str, help='split for metadata')
     parser.add_argument('--data_path', default='you_data_path', type=str,
                         help='dataset path')
