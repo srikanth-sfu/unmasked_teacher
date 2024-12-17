@@ -309,12 +309,12 @@ def save_on_master(*args, **kwargs):
 
 def init_distributed_mode_new(args):
     if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
-        rank = int(os.environ["RANK"])
-        world_size = int(os.environ['WORLD_SIZE'])
+        args.rank = int(os.environ["RANK"])
+        args.world_size = int(os.environ['WORLD_SIZE'])
         print(f"RANK and WORLD_SIZE in environ: {rank}/{world_size}")
     else:
-        rank = -1
-        world_size = -1
+        args.rank = -1
+        args.world_size = -1
     print(rank, world_size, args.local_rank)
     torch.cuda.set_device(args.local_rank)
     args.dist_backend = 'nccl'
