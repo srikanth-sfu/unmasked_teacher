@@ -23,7 +23,7 @@ python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --save_ckpt_freq 100 \
         --num_frames 8 \
         --num_workers 12 \
-        --warmup_itarations 4000 \
+        --warmup_iterations 4000 \
         --iterations 20000 \
         --tubelet_size 1 \
         --lr 2.5e-5 \
