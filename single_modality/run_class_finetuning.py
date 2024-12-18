@@ -159,11 +159,6 @@ def get_args():
     parser.add_argument('--num_segments', type=int, default=1)
     parser.add_argument('--num_frames', type=int, default=16)
     parser.add_argument('--sampling_rate', type=int, default=4)
-    parser.add_argument('--data_set', default='Kinetics', choices=[
-        'Kinetics', 'Kinetics_sparse', 
-        'SSV2', 'UCF101', 'HMDB51', 'image_folder',
-        'mitv1_sparse'
-        ], type=str, help='dataset')
     parser.add_argument('--output_dir', default='',
                         help='path where to save, empty for no saving')
     parser.add_argument('--log_dir', default=None,

@@ -12,7 +12,6 @@ python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --model vit_base_patch16_224 \
         --data_path ${DATA_PATH} \
         --prefix ${PREFIX} \
-        --data_set 'ucf101' \
         --nb_classes 12 \
         --finetune ${MODEL_PATH} \
         --log_dir ${OUTPUT_DIR} \
