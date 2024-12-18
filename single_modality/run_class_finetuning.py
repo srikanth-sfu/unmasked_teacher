@@ -228,6 +228,8 @@ def main(args, ds_init):
         args.epochs += 1
         args.warmup_epochs = args.warmup_iterations // (args.batch_size * int(os.environ["WORLD_SIZE"]))
         args.warmup_epochs += 1
+        print(args.warmup_epochs, args.epochs)
+        os._exit(1)
     utils.init_distributed_mode_new(args)
 
     if ds_init is not None:
