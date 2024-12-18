@@ -28,6 +28,7 @@ def get_args():
     parser = argparse.ArgumentParser('VideoMAE fine-tuning and evaluation script for video classification', add_help=False)
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--epochs', default=30, type=int)
+    parser.add_argument('--iterations', default=-1, type=int)
     parser.add_argument('--update_freq', default=1, type=int)
     parser.add_argument('--save_ckpt_freq', default=100, type=int)
 
@@ -81,6 +82,8 @@ def get_args():
                         help='lower lr bound for cyclic schedulers that hit 0 (1e-6)')
 
     parser.add_argument('--warmup_epochs', type=int, default=5, metavar='N',
+                        help='epochs to warmup LR, if scheduler supports')
+    parser.add_argument('--warmup_iterations', type=int, default=-1, metavar='N',
                         help='epochs to warmup LR, if scheduler supports')
     parser.add_argument('--warmup_steps', type=int, default=-1, metavar='N',
                         help='num of steps to warmup LR, will overload warmup_epochs if set > 0')
@@ -220,7 +223,12 @@ def get_args():
 
 
 def main(args, ds_init):
-    utils.init_distributed_mode(args)
+    if args.iterations > 0:
+        args.epochs = args.iterations // (args.batch_size * int(os.environ["WORLD_SIZE"]))
+        args.epochs += 1
+        args.warmup_epochs = args.warmup_iterations // (args.batch_size * int(os.environ["WORLD_SIZE"]))
+        args.warmup_epochs += 1
+    utils.init_distributed_mode_new(args)
 
     if ds_init is not None:
         utils.create_ds_config(args)
