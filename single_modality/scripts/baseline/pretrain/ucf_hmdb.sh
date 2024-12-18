@@ -17,6 +17,7 @@ unzip -qq umt.zip
 module load opencv/4.9.0
 module load python/3.10.13
 module load rust/1.76.0
+module load cuda/12.2
 source umt/bin/activate
 mkdir data && cd data
 cp -r /project/def-mpederso/smuralid/datasets/ucf_hmdb .
