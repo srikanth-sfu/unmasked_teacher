@@ -82,11 +82,19 @@ def build_pretraining_dataset(args):
 
 def build_dataset(is_train, test_mode, args):
     print(f'Use Dataset: {args.data_set}')
-    if args.data_set in [
+    if args.data_set == 'ucf_hmdb':
+        mode = None
+        anno_path = None
+        if is_train is True:
+            mode = 'train'
+            anno_path = os.path.join(args.data_path, 'ucf101_train_hmdb_ucf.csv')
+        else:  
+            mode = 'validation'
+            anno_path = os.path.join(args.data_path, 'ucf101_val_hmdb_ucf.csv')
+    elif args.data_set in [
             'Kinetics',
             'Kinetics_sparse',
             'mitv1_sparse',
-            'ucf_hmdb'
         ]:
         mode = None
         anno_path = None
