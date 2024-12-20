@@ -35,4 +35,5 @@ python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --test_num_crop 3 \
         --dist_eval \
         --enable_deepspeed \
-        --test_best
+        --test_best \
+        --data_set ucf_hmdb
