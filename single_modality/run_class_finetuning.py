@@ -158,6 +158,11 @@ def get_args():
     parser.add_argument('--imagenet_default_mean_and_std', default=True, action='store_true')
     parser.add_argument('--use_decord', default=True,
                         help='whether use decord to load video, otherwise load image')
+    parser.add_argument('--data_set', default='Kinetics', choices=[
+        'Kinetics', 'Kinetics_sparse', 
+        'SSV2', 'UCF101', 'HMDB51', 'image_folder',
+        'mitv1_sparse'
+        ], type=str, help='dataset')
     parser.add_argument('--num_segments', type=int, default=1)
     parser.add_argument('--num_frames', type=int, default=16)
     parser.add_argument('--sampling_rate', type=int, default=4)
@@ -247,8 +252,8 @@ def main(args, ds_init):
         dataset_val = None
     else:
         dataset_val, _ = build_dataset(is_train=False, test_mode=False, args=args)
-    dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
-    
+    #dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
+    dataset_test = None
 
     num_tasks = utils.get_world_size()
     global_rank = utils.get_rank()
@@ -263,8 +268,8 @@ def main(args, ds_init):
                     'equal num of samples per-process.')
         sampler_val = torch.utils.data.DistributedSampler(
             dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
-        sampler_test = torch.utils.data.DistributedSampler(
-            dataset_test, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+        # sampler_test = torch.utils.data.DistributedSampler(
+        #     dataset_test, num_replicas=num_tasks, rank=global_rank, shuffle=False)
     else:
         sampler_val = torch.utils.data.SequentialSampler(dataset_val)
 
@@ -599,7 +604,7 @@ def main(args, ds_init):
         utils.auto_load_model(
             args=args, model=model, model_without_ddp=model_without_ddp,
             optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)
-    test_stats = final_test(data_loader_test, model, device, preds_file)
+    test_stats = final_test(data_loader_val, model, device, preds_file)
     torch.distributed.barrier()
     if global_rank == 0:
         print("Start merging results...")

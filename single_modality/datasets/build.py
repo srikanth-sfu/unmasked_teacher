@@ -85,7 +85,8 @@ def build_dataset(is_train, test_mode, args):
     if args.data_set in [
             'Kinetics',
             'Kinetics_sparse',
-            'mitv1_sparse'
+            'mitv1_sparse',
+            'ucf_hmdb'
         ]:
         mode = None
         anno_path = None
