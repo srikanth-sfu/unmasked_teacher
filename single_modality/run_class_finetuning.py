@@ -54,6 +54,8 @@ def get_args():
     parser.add_argument('--model_ema', action='store_true', default=False)
     parser.add_argument('--model_ema_decay', type=float, default=0.9999, help='')
     parser.add_argument('--model_ema_force_cpu', action='store_true', default=False, help='')
+    parser.add_argument('--video_ext', default="mp4", help='video ext')
+    
 
     # Optimizer parameters
     parser.add_argument('--opt', default='adamw', type=str, metavar='OPTIMIZER',
@@ -223,8 +225,6 @@ def main(args, ds_init):
         args.epochs += 1
         args.warmup_epochs = args.warmup_iterations // (args.batch_size * int(os.environ["WORLD_SIZE"]))
         args.warmup_epochs += 1
-        print(args.warmup_epochs, args.epochs)
-        os._exit(1)
     utils.init_distributed_mode_new(args)
 
     if ds_init is not None:
