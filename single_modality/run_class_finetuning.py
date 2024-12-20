@@ -161,7 +161,7 @@ def get_args():
     parser.add_argument('--data_set', default='Kinetics', choices=[
         'Kinetics', 'Kinetics_sparse', 
         'SSV2', 'UCF101', 'HMDB51', 'image_folder',
-        'mitv1_sparse'
+        'mitv1_sparse', 'ucf_hmdb'
         ], type=str, help='dataset')
     parser.add_argument('--num_segments', type=int, default=1)
     parser.add_argument('--num_frames', type=int, default=16)
