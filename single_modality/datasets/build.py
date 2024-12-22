@@ -150,8 +150,7 @@ def build_dataset(is_train, test_mode, args):
             short_side_size=args.short_side_size,
             new_height=256,
             new_width=320,
-            args=args,
-            split=',')
+            args=args)
         
         nb_classes = args.nb_classes
     
