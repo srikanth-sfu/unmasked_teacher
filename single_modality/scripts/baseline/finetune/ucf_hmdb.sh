@@ -37,7 +37,7 @@ if [ $? -eq 124 ]; then
   echo "The script timed out after ${MAX_HOURS} hour(s). Restarting..."
   # Call the script itself again with the same configuration
   cd $SLURM_SUBMIT_DIR
-  sbatch scripts/baseline/pretrain/ucf_hmdb.sh 
+  sbatch scripts/baseline/finetune/ucf_hmdb.sh 
   # scontrol requeue $SLURM_JOB_ID
 else
   echo "Script completed before timeout"
