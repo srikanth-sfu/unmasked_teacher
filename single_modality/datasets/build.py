@@ -92,22 +92,7 @@ def build_dataset(is_train, test_mode, args):
             mode = 'validation'
             anno_path = os.path.join(args.data_path, 'ucf101_val_hmdb_ucf.csv')
         func = VideoClsDataset
-    elif args.data_set in [
-            'Kinetics',
-            'Kinetics_sparse',
-            'mitv1_sparse',
-        ]:
-        mode = None
-        anno_path = None
-        if is_train is True:
-            mode = 'train'
-            anno_path = os.path.join(args.data_path, 'train.csv')
-        elif test_mode is True:
-            mode = 'test'
-            anno_path = os.path.join(args.data_path, 'test.csv') 
-        else:  
-            mode = 'validation'
-            anno_path = os.path.join(args.data_path, 'val.csv')
+
         dataset = func(
             anno_path=anno_path,
             prefix=args.prefix,
@@ -125,8 +110,24 @@ def build_dataset(is_train, test_mode, args):
             new_height=256,
             new_width=320,
             args=args)
-        print(nb_classes)
         nb_classes = args.nb_classes
+        
+    elif args.data_set in [
+            'Kinetics',
+            'Kinetics_sparse',
+            'mitv1_sparse',
+        ]:
+        mode = None
+        anno_path = None
+        if is_train is True:
+            mode = 'train'
+            anno_path = os.path.join(args.data_path, 'train.csv')
+        elif test_mode is True:
+            mode = 'test'
+            anno_path = os.path.join(args.data_path, 'test.csv') 
+        else:  
+            mode = 'validation'
+            anno_path = os.path.join(args.data_path, 'val.csv')
 
         if 'sparse' in args.data_set:
             func = VideoClsDataset_sparse
