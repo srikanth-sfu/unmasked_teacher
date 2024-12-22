@@ -38,4 +38,6 @@ python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --test_best \
         --data_set ucf_hmdb \
         --video_ext .mp4 \
-        --split ','
+        --split ',' \
+        --mixup 0.0 \
+        --cutmix 0.0
