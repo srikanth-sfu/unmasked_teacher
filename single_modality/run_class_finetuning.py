@@ -228,6 +228,7 @@ def get_args():
 def main(args, ds_init):
     if args.iterations > 0:
         args.epochs = args.iterations // (args.batch_size * int(os.environ["WORLD_SIZE"]))
+        print(args.iterations, args.batch_size, os.environ["WORLD_SIZE"])
         args.epochs += 1
         args.warmup_epochs = args.warmup_iterations // (args.batch_size * int(os.environ["WORLD_SIZE"]))
         args.warmup_epochs += 1
