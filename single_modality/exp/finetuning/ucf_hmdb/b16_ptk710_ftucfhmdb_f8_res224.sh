@@ -36,4 +36,5 @@ python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --dist_eval \
         --enable_deepspeed \
         --test_best \
-        --data_set ucf_hmdb
+        --data_set ucf_hmdb \
+        --video_ext .mp4

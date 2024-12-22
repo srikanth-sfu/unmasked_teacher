@@ -91,6 +91,7 @@ def build_dataset(is_train, test_mode, args):
         else:  
             mode = 'validation'
             anno_path = os.path.join(args.data_path, 'ucf101_val_hmdb_ucf.csv')
+        func = VideoClsDataset
     elif args.data_set in [
             'Kinetics',
             'Kinetics_sparse',
@@ -106,7 +107,25 @@ def build_dataset(is_train, test_mode, args):
             anno_path = os.path.join(args.data_path, 'test.csv') 
         else:  
             mode = 'validation'
-            anno_path = os.path.join(args.data_path, 'val.csv') 
+            anno_path = os.path.join(args.data_path, 'val.csv')
+        dataset = func(
+            anno_path=anno_path,
+            prefix=args.prefix,
+            split=args.split,
+            mode=mode,
+            clip_len=args.num_frames,
+            frame_sample_rate=args.sampling_rate,
+            num_segment=1,
+            test_num_segment=args.test_num_segment,
+            test_num_crop=args.test_num_crop,
+            num_crop=1 if not test_mode else 3,
+            keep_aspect_ratio=True,
+            crop_size=args.input_size,
+            short_side_size=args.short_side_size,
+            new_height=256,
+            new_width=320,
+            args=args)
+        nb_classes = args.nb_classes
 
         if 'sparse' in args.data_set:
             func = VideoClsDataset_sparse

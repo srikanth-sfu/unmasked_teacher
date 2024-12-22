@@ -54,7 +54,7 @@ def get_args():
     parser.add_argument('--model_ema', action='store_true', default=False)
     parser.add_argument('--model_ema_decay', type=float, default=0.9999, help='')
     parser.add_argument('--model_ema_force_cpu', action='store_true', default=False, help='')
-    parser.add_argument('--video_ext', default="mp4", help='video ext')
+    parser.add_argument('--video_ext', default=".mp4", help='video ext')
     
 
     # Optimizer parameters
@@ -163,6 +163,7 @@ def get_args():
         'SSV2', 'UCF101', 'HMDB51', 'image_folder',
         'mitv1_sparse', 'ucf_hmdb'
         ], type=str, help='dataset')
+    
     parser.add_argument('--num_segments', type=int, default=1)
     parser.add_argument('--num_frames', type=int, default=16)
     parser.add_argument('--sampling_rate', type=int, default=4)

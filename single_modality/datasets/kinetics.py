@@ -103,6 +103,8 @@ class VideoClsDataset(Dataset):
             scale_t = 1
 
             sample = self.dataset_samples[index]
+            if not sample.endswith(args.video_ext):
+                sample += args.video_ext
             buffer = self.loadvideo_decord(sample, sample_rate_scale=scale_t) # T H W C
             if len(buffer) == 0:
                 while len(buffer) == 0:
