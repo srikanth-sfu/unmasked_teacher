@@ -226,6 +226,7 @@ def get_args():
 
 
 def main(args, ds_init):
+    import ipdb; ipdb.set_trace()
     if args.iterations > 0:
         args.epochs = args.iterations // (args.batch_size * int(os.environ["WORLD_SIZE"]))
         print(args.iterations, args.batch_size, os.environ["WORLD_SIZE"])
