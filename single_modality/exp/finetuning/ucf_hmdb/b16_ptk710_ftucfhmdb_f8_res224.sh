@@ -6,7 +6,7 @@ JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
 OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/src_finetune/$JOB_NAME"
 PREFIX="${SLURM_TMPDIR}/data/ucf_hmdb/"
 LOG_DIR="./logs/${JOB_NAME}"
-DATA_PATH='video_splits/ucf101_train_hmdb_ucf.csv'
+DATA_PATH='video_splits/'
 
 python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --model vit_base_patch16_224 \
