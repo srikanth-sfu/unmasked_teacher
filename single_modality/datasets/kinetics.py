@@ -130,6 +130,7 @@ class VideoClsDataset(Dataset):
             return buffer, self.label_array[index], index, {}
 
         elif self.mode == 'validation':
+            args = self.args
             sample = self.dataset_samples[index]
             if not sample.endswith(args.video_ext):
                 sample += args.video_ext
@@ -144,6 +145,7 @@ class VideoClsDataset(Dataset):
             return buffer, self.label_array[index], sample.split("/")[-1].split(".")[0]
 
         elif self.mode == 'test':
+            args = self.args
             sample = self.test_dataset[index]
             if not sample.endswith(args.video_ext):
                 sample += args.video_ext
