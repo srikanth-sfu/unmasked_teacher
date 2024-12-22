@@ -226,14 +226,7 @@ def get_args():
 
 
 def main(args, ds_init):
-    print(args.iterations)
-    os._exit(1)
-    if args.iterations > 0:
-        args.epochs = args.iterations // (args.batch_size * int(os.environ["WORLD_SIZE"]))
-        print(args.iterations, args.batch_size, os.environ["WORLD_SIZE"])
-        args.epochs += 1
-        args.warmup_epochs = args.warmup_iterations // (args.batch_size * int(os.environ["WORLD_SIZE"]))
-        args.warmup_epochs += 1
+    
     utils.init_distributed_mode_new(args)
 
     if ds_init is not None:
@@ -463,6 +456,11 @@ def main(args, ds_init):
 
     total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
     num_training_steps_per_epoch = len(dataset_train) // total_batch_size
+    if args.iterations > 0:
+        args.epochs = args.iterations // num_training_steps_per_epoch
+        args.epochs += 1
+        args.warmup_epochs = args.warmup_iterations // num_training_steps_per_epoch
+        args.warmup_epochs += 1
     args.lr = args.lr * total_batch_size * args.num_sample / 256
     args.min_lr = args.min_lr * total_batch_size * args.num_sample / 256
     args.warmup_lr = args.warmup_lr * total_batch_size * args.num_sample / 256
