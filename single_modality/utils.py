@@ -535,6 +535,8 @@ def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_sca
 def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, model_ema=None):
     output_dir = Path(args.output_dir)
     if loss_scaler is not None:
+        print('YES...................')
+        os._exit(1)
         # torch.amp
         if os.path.exists(os.path.join(output_dir, 'checkpoint-latest.pth')):
             args.resume = os.path.join(output_dir, 'checkpoint-latest.pth')
@@ -569,6 +571,8 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                 print("With optim & sched!")
     else:
         # deepspeed, only support '--auto_resume'.
+        print('NO...................')
+        os._exit(1)
         flag = False
         if args.test_best and os.path.exists(os.path.join(output_dir, 'checkpoint-best')):
             try:
