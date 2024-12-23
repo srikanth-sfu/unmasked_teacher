@@ -571,8 +571,6 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                 print("With optim & sched!")
     else:
         # deepspeed, only support '--auto_resume'.
-        print('NO...................')
-        os._exit(1)
         flag = False
         if args.test_best and os.path.exists(os.path.join(output_dir, 'checkpoint-best')):
             try:
@@ -582,6 +580,8 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                 print('Not latest model')
         elif args.auto_resume and not flag:
             flag = False
+            print('NO...................')
+            os._exit(1)
             try:
                 load_specific_model(model, model_ema, args, output_dir, model_name='latest')
                 flag = True
