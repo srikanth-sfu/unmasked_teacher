@@ -605,8 +605,6 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
 def load_specific_model(model, model_ema, args, output_dir, model_name):
     args.resume = os.path.join(output_dir, f'checkpoint-{model_name}')
     print(f"Auto resume the {model_name} checkpoint")
-    print(args.start_epoch)    
-    os._exit(1)
     _, client_states = model.load_checkpoint(args.output_dir, tag=f'checkpoint-{model_name}')
     args.start_epoch = client_states['epoch'] + 1
     if model_ema is not None:
