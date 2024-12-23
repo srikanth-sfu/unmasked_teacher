@@ -535,8 +535,6 @@ def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_sca
 def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, model_ema=None):
     output_dir = Path(args.output_dir)
     if loss_scaler is not None:
-        print('YES...................')
-        os._exit(1)
         # torch.amp
         if os.path.exists(os.path.join(output_dir, 'checkpoint-latest.pth')):
             args.resume = os.path.join(output_dir, 'checkpoint-latest.pth')
@@ -573,8 +571,6 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
         # deepspeed, only support '--auto_resume'.
         flag = False
         if args.test_best and os.path.exists(os.path.join(output_dir, 'checkpoint-best')):
-            print('NO...................')
-            os._exit(1)
             try:
                 load_specific_model(model, model_ema, args, output_dir, model_name='best')
                 flag = True
@@ -605,12 +601,11 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                         latest_ckpt = max(int(t), latest_ckpt)
                 if latest_ckpt >= 0:
                     load_specific_model(model, model_ema, args, output_dir, model_name='latest_ckpt')
-        print('NO1...................', args.auto_resume)
-        os._exit(1)
 
 def load_specific_model(model, model_ema, args, output_dir, model_name):
     args.resume = os.path.join(output_dir, f'checkpoint-{model_name}')
     print(f"Auto resume the {model_name} checkpoint")
+    os._exit(1)
     _, client_states = model.load_checkpoint(args.output_dir, tag=f'checkpoint-{model_name}')
     args.start_epoch = client_states['epoch'] + 1
     if model_ema is not None:
