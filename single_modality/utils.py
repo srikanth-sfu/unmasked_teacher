@@ -573,6 +573,8 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
         # deepspeed, only support '--auto_resume'.
         flag = False
         if args.test_best and os.path.exists(os.path.join(output_dir, 'checkpoint-best')):
+            print('NO...................')
+            os._exit(1)
             try:
                 load_specific_model(model, model_ema, args, output_dir, model_name='best')
                 flag = True
@@ -580,8 +582,6 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                 print('Not latest model')
         elif args.auto_resume and not flag:
             flag = False
-            print('NO...................')
-            os._exit(1)
             try:
                 load_specific_model(model, model_ema, args, output_dir, model_name='latest')
                 flag = True
@@ -605,7 +605,8 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                         latest_ckpt = max(int(t), latest_ckpt)
                 if latest_ckpt >= 0:
                     load_specific_model(model, model_ema, args, output_dir, model_name='latest_ckpt')
-
+        print('NO1...................', args.auto_resume)
+        os._exit(1)
 
 def load_specific_model(model, model_ema, args, output_dir, model_name):
     args.resume = os.path.join(output_dir, f'checkpoint-{model_name}')
