@@ -31,6 +31,7 @@ cd unmasked_teacher
 git checkout baseline_pretrain
 cd single_modality
 
+
 timeout 176m bash exp/finetuning/ucf_hmdb/b16_ptk710_ftucfhmdb_f8_res224.sh
  
 if [ $? -eq 124 ]; then
