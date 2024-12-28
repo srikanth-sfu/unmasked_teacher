@@ -57,14 +57,16 @@ class DataAugmentationForVideoMAE(object):
         return repr
 
 
-def build_pretraining_dataset(args):
+def build_pretraining_dataset(args, video_ext=None):
     transform = DataAugmentationForVideoMAE(args)
+    if video_ext is None:
+        video_ext = args.video_ext
     dataset = VideoMAE(
         root=None,
         setting=args.data_path,
         prefix=args.prefix,
         split=args.split,
-        video_ext=args.video_ext,
+        video_ext=video_ext,
         is_color=True,
         modality='rgb',
         num_segments=args.num_segments,
@@ -80,9 +82,11 @@ def build_pretraining_dataset(args):
     return dataset
 
 
-def build_dataset(is_train, test_mode, args):
-    print(f'Use Dataset: {args.data_set}')
-    if args.data_set == 'ucf_hmdb':
+def build_dataset(is_train, test_mode, args, ds=None):
+    if ds is None:
+        ds = args.data_set
+    print(f'Use Dataset: {ds}')
+    if ds == 'ucf_hmdb':
         mode = None
         anno_path = None
         if is_train is True:
@@ -111,8 +115,37 @@ def build_dataset(is_train, test_mode, args):
             new_width=320,
             args=args)
         nb_classes = args.nb_classes
-        
-    elif args.data_set in [
+    elif ds == 'hmdb_ucf':
+        mode = None
+        anno_path = None
+        if is_train is True:
+            mode = 'train'
+            anno_path = os.path.join(args.data_path, 'hmdb51_train_hmdb_ucf.csv')
+        else:  
+            mode = 'validation'
+            anno_path = os.path.join(args.data_path, 'hmdb51_val_hmdb_ucf.csv')
+        func = VideoClsDataset
+
+        dataset = func(
+            anno_path=anno_path,
+            prefix=args.prefix,
+            split=args.split,
+            mode=mode,
+            clip_len=args.num_frames,
+            frame_sample_rate=args.sampling_rate,
+            num_segment=1,
+            video_ext='avi',
+            test_num_segment=args.test_num_segment,
+            test_num_crop=args.test_num_crop,
+            num_crop=1 if not test_mode else 3,
+            keep_aspect_ratio=True,
+            crop_size=args.input_size,
+            short_side_size=args.short_side_size,
+            new_height=256,
+            new_width=320,
+            args=args)
+        nb_classes = args.nb_classes
+    elif ds in [
             'Kinetics',
             'Kinetics_sparse',
             'mitv1_sparse',
@@ -129,7 +162,7 @@ def build_dataset(is_train, test_mode, args):
             mode = 'validation'
             anno_path = os.path.join(args.data_path, 'val.csv')
 
-        if 'sparse' in args.data_set:
+        if 'sparse' in ds:
             func = VideoClsDataset_sparse
         else:
             func = VideoClsDataset
@@ -154,7 +187,7 @@ def build_dataset(is_train, test_mode, args):
         
         nb_classes = args.nb_classes
     
-    elif args.data_set == 'SSV2':
+    elif ds == 'SSV2':
         mode = None
         anno_path = None
         if is_train is True:
@@ -190,7 +223,7 @@ def build_dataset(is_train, test_mode, args):
             args=args)
         nb_classes = 174
 
-    elif args.data_set == 'UCF101':
+    elif ds == 'UCF101':
         mode = None
         anno_path = None
         if is_train is True:
@@ -222,7 +255,7 @@ def build_dataset(is_train, test_mode, args):
             args=args)
         nb_classes = 101
     
-    elif args.data_set == 'HMDB51':
+    elif ds == 'HMDB51':
         mode = None
         anno_path = None
         if is_train is True:
@@ -254,9 +287,14 @@ def build_dataset(is_train, test_mode, args):
             args=args)
         nb_classes = 51
     else:
-        print(f'Wrong: {args.data_set}')
+        print(f'Wrong: {ds}')
         raise NotImplementedError()
     assert nb_classes == args.nb_classes
     print("Number of the class = %d" % args.nb_classes)
 
     return dataset, nb_classes
+
+
+def build_dataset_colab(is_train, test_mode, target, args):
+    ds = args.data_set if not target else args.data_set_target
+    return build_dataset(is_train, test_mode, args, ds)
