@@ -15,6 +15,7 @@ cd $SLURM_TMPDIR
 cp -r /project/def-mpederso/smuralid/envs/umt.zip . 
 unzip -qq umt.zip
 module load python/3.10.13
+module load opencv/4.9.0
 module load rust/1.76.0
 module load cuda/12.2
 source umt/bin/activate
