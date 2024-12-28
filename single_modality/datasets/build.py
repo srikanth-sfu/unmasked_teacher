@@ -297,4 +297,5 @@ def build_dataset(is_train, test_mode, args, ds=None):
 
 def build_dataset_colab(is_train, test_mode, target, args):
     ds = args.data_set if not target else args.data_set_target
+    args.ds_id = 0 if not target else 1
     return build_dataset(is_train, test_mode, args, ds)

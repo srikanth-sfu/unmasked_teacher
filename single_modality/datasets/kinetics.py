@@ -43,6 +43,7 @@ class VideoClsDataset(Dataset):
         self.new_width = new_width
         self.keep_aspect_ratio = keep_aspect_ratio
         self.num_segment = num_segment
+        self.ds_id = args.ds_id
         self.test_num_segment = test_num_segment
         self.num_crop = num_crop
         self.test_num_crop = test_num_crop
@@ -123,11 +124,11 @@ class VideoClsDataset(Dataset):
                     frame_list.append(new_frames)
                     label_list.append(label)
                     index_list.append(index)
-                return frame_list, label_list, index_list, {}
+                return frame_list, label_list, index_list, {}, self.ds_id
             else:
                 buffer = self._aug_frame(buffer, args)
             
-            return buffer, self.label_array[index], index, {}
+            return buffer, self.label_array[index], index, {}, self.ds_id
 
         elif self.mode == 'validation':
             args = self.args
@@ -142,7 +143,7 @@ class VideoClsDataset(Dataset):
                     sample = self.dataset_samples[index]
                     buffer = self.loadvideo_decord(sample)
             buffer = self.data_transform(buffer)
-            return buffer, self.label_array[index], sample.split("/")[-1].split(".")[0]
+            return buffer, self.label_array[index], sample.split("/")[-1].split(".")[0], self.ds_id
 
         elif self.mode == 'test':
             args = self.args
@@ -178,7 +179,7 @@ class VideoClsDataset(Dataset):
 
             buffer = self.data_transform(buffer)
             return buffer, self.test_label_array[index], sample.split("/")[-1].split(".")[0], \
-                   chunk_nb, split_nb
+                   chunk_nb, split_nb, self.ds_id
         else:
             raise NameError('mode {} unkown'.format(self.mode))
 
