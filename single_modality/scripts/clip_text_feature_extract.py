@@ -38,6 +38,6 @@ def extract_clip_features(classnames, output_file):
 
 if __name__ == '__main__':
     import sys
-    classnames = open(sys.argv[1]).read().split("\n")[:-1]
+    classnames = open(sys.argv[1]).read().split("\n")
     output_file = sys.argv[1].replace(".txt", ".npy")
     extract_clip_features(classnames, output_file)
