@@ -31,7 +31,8 @@ def extract_clip_features(classnames, output_file):
         text_features = model.encode_text(text_inputs)
 
     # Normalize features
-    feats = text_features / text_features.norm(dim=-1, keepdim=True).cpu().numpy()
+    feats = text_features / text_features.norm(dim=-1, keepdim=True)
+    feats = feats.cpu().numpy()
     print(feats.shape)
     np.save(output_file, feats)
 
