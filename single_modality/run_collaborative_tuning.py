@@ -192,7 +192,7 @@ def get_args():
                         help='interval of CLIP student return layers')
     parser.add_argument('--mask_type', default='tube', choices=['random', 'tube', 'attention'],
                         type=str, help='masked strategy of video tokens/patches')
-    parser.add_argument('--mask_ratio', default=0.75, type=float,
+    parser.add_argument('--mask_ratio', default=0.8, type=float,
                         help='ratio of the visual tokens/patches need be masked')
 
     # Dataset parameters
