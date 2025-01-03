@@ -190,6 +190,10 @@ def get_args():
                         help='interval of CLIP teacher return layers')
     parser.add_argument('--clip_student_return_interval', default=1, type=float,
                         help='interval of CLIP student return layers')
+    parser.add_argument('--mask_type', default='tube', choices=['random', 'tube', 'attention'],
+                        type=str, help='masked strategy of video tokens/patches')
+    parser.add_argument('--mask_ratio', default=0.75, type=float,
+                        help='ratio of the visual tokens/patches need be masked')
 
     # Dataset parameters
     parser.add_argument('--prefix', default='', type=str, help='prefix for data')
@@ -556,7 +560,7 @@ def main(args, ds_init):
             lr_schedule_values=lr_schedule_values, wd_schedule_values=wd_schedule_values,
             num_training_steps_per_epoch=num_training_steps_per_epoch, update_freq=args.update_freq,
             teacher_model=teacher_model, clip_input_resolution=args.clip_input_resolution,
-            clip_loss_ratio=args.clip_loss_ratio, mask_type=args.mask_type, mask_ratio=args.mask_ratio,
+            clip_loss_ratio=args.clip_loss_ratio, mask_ratio=args.mask_ratio,
             clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target
         )
         if args.output_dir and args.save_ckpt:

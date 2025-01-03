@@ -63,7 +63,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     start_steps=None, lr_schedule_values=None, wd_schedule_values=None,
                     num_training_steps_per_epoch=None, update_freq=None,
                     teacher_model=None, clip_input_resolution=224, criterion_target=None,
-                    clip_loss_ratio=0.5, mask_type='tube', mask_ratio=0., clip_label_embedding=None):
+                    clip_loss_ratio=0.5, mask_ratio=0., clip_label_embedding=None):
     model.train(True)
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
