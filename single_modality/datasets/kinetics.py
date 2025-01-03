@@ -106,6 +106,8 @@ class VideoClsDataset(Dataset):
             sample = self.dataset_samples[index]
             if not sample.endswith(args.video_ext):
                 sample += args.video_ext
+            print('Kinetics', sample)
+            os._exit(1)
             buffer = self.loadvideo_decord(sample, sample_rate_scale=scale_t) # T H W C
             if len(buffer) == 0:
                 while len(buffer) == 0:
