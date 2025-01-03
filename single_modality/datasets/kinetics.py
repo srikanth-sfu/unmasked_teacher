@@ -312,6 +312,7 @@ class VideoClsDataset(Dataset):
             return buffer
         except:
             print("video cannot be loaded by decord: ", fname)
+            os._exit(1)
             return []
 
     def __len__(self):

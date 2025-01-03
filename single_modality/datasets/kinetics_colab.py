@@ -107,8 +107,6 @@ class VideoClsColabDataset(Dataset):
             sample = self.dataset_samples[index]
             if not sample.endswith(args.video_ext):
                 sample += args.video_ext
-            print('Kinetics colab', sample)
-            os._exit(1)
             buffer = self.loadvideo_decord(sample, sample_rate_scale=scale_t) # T H W C
 
             if len(buffer) == 0:
@@ -314,6 +312,7 @@ class VideoClsColabDataset(Dataset):
             return buffer
         except:
             print("video cannot be loaded by decord: ", fname)
+            os._exit(1)
             return []
 
     def __len__(self):
