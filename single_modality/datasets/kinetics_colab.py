@@ -307,7 +307,7 @@ class VideoClsColabDataset(Dataset):
             buffer = vr.get_batch(all_index).asnumpy()
             return buffer
         except:
-            print("video cannot be loaded by decord: ", fname)
+            print("Colab file, video cannot be loaded by decord: ", fname)
             os._exit(1)
             return []
 
