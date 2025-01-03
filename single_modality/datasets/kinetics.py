@@ -30,7 +30,7 @@ class VideoClsDataset(Dataset):
                  frame_sample_rate=2, crop_size=224, short_side_size=256,
                  new_height=256, new_width=340, keep_aspect_ratio=True,
                  num_segment=1, num_crop=1, test_num_segment=10, test_num_crop=3,
-                 args=None):
+                 args=None, video_ext=".mp4"):
         self.anno_path = anno_path
         self.prefix = prefix
         self.split = split
@@ -44,6 +44,7 @@ class VideoClsDataset(Dataset):
         self.keep_aspect_ratio = keep_aspect_ratio
         self.num_segment = num_segment
         self.ds_id = args.ds_id
+        self.video_ext = video_ext
         self.test_num_segment = test_num_segment
         self.num_crop = num_crop
         self.test_num_crop = test_num_crop
