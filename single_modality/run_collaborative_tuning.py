@@ -134,6 +134,7 @@ def get_args():
 
     # Finetuning params
     parser.add_argument('--finetune', default='', help='finetune from checkpoint')
+    parser.add_argument('--finetune-tag', default='', help='finetune from checkpoint')
     parser.add_argument('--delete_head', action='store_true', help='whether delete head')
     parser.add_argument('--model_key', default='model|module', type=str)
     parser.add_argument('--model_prefix', default='', type=str)
@@ -502,6 +503,7 @@ def main(args, ds_init):
 
     print("criterion = %s" % str(criterion))
 
+    utils.load_model_colab(model=model, output_dir=args.finetune, model_name=args.finetune_tag)
     utils.auto_load_model(
         args=args, model=model, model_without_ddp=model_without_ddp,
         optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)

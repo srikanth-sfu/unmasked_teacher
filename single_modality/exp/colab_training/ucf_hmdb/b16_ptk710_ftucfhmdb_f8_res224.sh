@@ -1,7 +1,7 @@
 export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
-MODEL_PATH='/project/def-mpederso/smuralid/checkpoints/umt/src_finetune/baseline_b16_ucf_hmdb_f8_res224/checkpoint-best'
+MODEL_PATH='/project/def-mpederso/smuralid/checkpoints/umt/src_finetune/baseline_b16_ucf_hmdb_f8_res224/'
 JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
 OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/collab_tune/$JOB_NAME"
 PREFIX="${SLURM_TMPDIR}/data/ucf_hmdb/"
@@ -14,6 +14,7 @@ python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.p
         --prefix ${PREFIX} \
         --nb_classes 12 \
         --finetune ${MODEL_PATH} \
+        --finetune-tag "checkpoint-best" \
         --log_dir ${OUTPUT_DIR} \
         --output_dir ${OUTPUT_DIR} \
         --batch_size 5 \

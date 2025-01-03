@@ -602,6 +602,10 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                 if latest_ckpt >= 0:
                     load_specific_model(model, model_ema, args, output_dir, model_name='latest_ckpt')
 
+def load_model_colab(model, output_dir, model_name):
+    print(f"Loading {model_name} checkpoint for colab training")
+    _, client_states = model.load_checkpoint(output_dir, tag=f'{model_name}')
+
 def load_specific_model(model, model_ema, args, output_dir, model_name):
     args.resume = os.path.join(output_dir, f'checkpoint-{model_name}')
     print(f"Auto resume the {model_name} checkpoint")
