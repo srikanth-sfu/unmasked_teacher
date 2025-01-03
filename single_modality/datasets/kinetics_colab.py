@@ -105,8 +105,6 @@ class VideoClsColabDataset(Dataset):
             scale_t = 1
 
             sample = self.dataset_samples[index]
-            if not sample.endswith(args.video_ext):
-                sample += args.video_ext
             buffer = self.loadvideo_decord(sample, sample_rate_scale=scale_t) # T H W C
 
             if len(buffer) == 0:
@@ -135,8 +133,6 @@ class VideoClsColabDataset(Dataset):
         elif self.mode == 'validation':
             args = self.args
             sample = self.dataset_samples[index]
-            if not sample.endswith(args.video_ext):
-                sample += args.video_ext
             buffer = self.loadvideo_decord(sample)
             if len(buffer) == 0:
                 while len(buffer) == 0:
@@ -150,8 +146,6 @@ class VideoClsColabDataset(Dataset):
         elif self.mode == 'test':
             args = self.args
             sample = self.test_dataset[index]
-            if not sample.endswith(args.video_ext):
-                sample += args.video_ext
             chunk_nb, split_nb = self.test_seg[index]
             buffer = self.loadvideo_decord(sample, chunk_nb=chunk_nb)
 
@@ -249,6 +243,8 @@ class VideoClsColabDataset(Dataset):
 
     def loadvideo_decord(self, sample, sample_rate_scale=1, chunk_nb=0):
         """Load video content using Decord"""
+        if not sample.endswith(self.video_ext):
+            sample += self.video_ext
         fname = sample
         fname = os.path.join(self.prefix, fname)
 
