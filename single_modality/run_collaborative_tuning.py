@@ -182,7 +182,7 @@ def get_args():
                         help='output dimension of CLIP decoder')
     parser.add_argument('--clip_norm_type', default='l2', type=str,
                         help='type of feature normalization')
-    parser.add_argument('--clip_return_attn', default=False, type=bool,
+    parser.add_argument('--clip_return_attn', default=True, type=bool,
                         help='whether return CLIP attention')
     parser.add_argument('--clip_return_layer', default=1, type=int,
                         help='number of CLIP return layers')
