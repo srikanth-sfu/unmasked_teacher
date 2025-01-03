@@ -31,7 +31,7 @@ class VideoClsColabDataset(Dataset):
                  frame_sample_rate=2, crop_size=224, short_side_size=256,
                  new_height=256, new_width=340, keep_aspect_ratio=True,
                  num_segment=1, num_crop=1, test_num_segment=10, test_num_crop=3,
-                 args=None):
+                 args=None, video_ext=".mp4"):
         self.anno_path = anno_path
         self.prefix = prefix
         self.split = split
