@@ -4,9 +4,10 @@ from .transforms import *
 from .masking_generator import TubeMaskingGenerator, RandomMaskingGenerator
 from .mae import VideoMAE
 from .kinetics import VideoClsDataset
+from .kinetics_colab import VideoClsColabDataset
 from .kinetics_sparse import VideoClsDataset_sparse
 from .ssv2 import SSVideoClsDataset, SSRawFrameClsDataset
-
+import numpy as np
 
 class DataAugmentationForVideoMAE(object):
     def __init__(self, args):
@@ -49,13 +50,6 @@ class DataAugmentationForVideoMAE(object):
         else:
             return process_data, self.masked_position_generator()
 
-    def __repr__(self):
-        repr = "(DataAugmentationForVideoMAE,\n"
-        repr += "  transform = %s,\n" % str(self.transform)
-        repr += "  Masked position generator = %s,\n" % str(self.masked_position_generator)
-        repr += ")"
-        return repr
-
 
 def build_pretraining_dataset(args, video_ext=None):
     transform = DataAugmentationForVideoMAE(args)
@@ -92,10 +86,12 @@ def build_dataset(is_train, test_mode, args, ds=None):
         if is_train is True:
             mode = 'train'
             anno_path = os.path.join(args.data_path, 'ucf101_train_hmdb_ucf.csv')
+            func = VideoClsColabDataset
         else:  
             mode = 'validation'
             anno_path = os.path.join(args.data_path, 'ucf101_val_hmdb_ucf.csv')
-        func = VideoClsDataset
+            func = VideoClsDataset
+        args.clip_label_embedding = np.load("video_splits/ucf_hmdb_classnames.npy")
 
         dataset = func(
             anno_path=anno_path,
@@ -121,10 +117,12 @@ def build_dataset(is_train, test_mode, args, ds=None):
         if is_train is True:
             mode = 'train'
             anno_path = os.path.join(args.data_path, 'hmdb51_train_hmdb_ucf.csv')
+            func = VideoClsColabDataset
         else:  
             mode = 'validation'
             anno_path = os.path.join(args.data_path, 'hmdb51_val_hmdb_ucf.csv')
-        func = VideoClsDataset
+            func = VideoClsDataset
+        args.clip_label_embedding = np.load("video_splits/ucf_hmdb_classnames.npy")
 
         dataset = func(
             anno_path=anno_path,

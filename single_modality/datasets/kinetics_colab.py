@@ -16,6 +16,7 @@ from .video_transforms import (
     horizontal_flip, random_short_side_scale_jitter, uniform_crop, 
 )
 from .volume_transforms import ClipToTensor
+from PIL import Image
 
 try:
     from petrel_client.client import Client
@@ -23,7 +24,7 @@ try:
 except ImportError:
     has_client = False
 
-class VideoClsDataset(Dataset):
+class VideoClsColabDataset(Dataset):
     """Load your own video classification dataset."""
 
     def __init__(self, anno_path, prefix='', split=' ', mode='train', clip_len=8,
@@ -107,6 +108,7 @@ class VideoClsDataset(Dataset):
             if not sample.endswith(args.video_ext):
                 sample += args.video_ext
             buffer = self.loadvideo_decord(sample, sample_rate_scale=scale_t) # T H W C
+
             if len(buffer) == 0:
                 while len(buffer) == 0:
                     warnings.warn("video {} not correctly loaded during training".format(sample))
@@ -143,7 +145,7 @@ class VideoClsDataset(Dataset):
                     sample = self.dataset_samples[index]
                     buffer = self.loadvideo_decord(sample)
             buffer = self.data_transform(buffer)
-            return buffer, self.label_array[index], sample.split("/")[-1].split(".")[0]
+            return buffer, self.label_array[index], sample.split("/")[-1].split(".")[0], self.ds_id
 
         elif self.mode == 'test':
             args = self.args
@@ -179,7 +181,7 @@ class VideoClsDataset(Dataset):
 
             buffer = self.data_transform(buffer)
             return buffer, self.test_label_array[index], sample.split("/")[-1].split(".")[0], \
-                   chunk_nb, split_nb
+                   chunk_nb, split_nb, self.ds_id
         else:
             raise NameError('mode {} unkown'.format(self.mode))
 

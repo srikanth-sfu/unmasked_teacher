@@ -16,7 +16,7 @@ from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.utils import ModelEma
 from optim_factory import create_optimizer, get_parameter_groups, LayerDecayValueAssigner
 
-from datasets import build_dataset
+from datasets import build_dataset_colab
 from engines.engine_for_collabtraining import train_one_epoch, validation_one_epoch, final_test, merge
 from utils import NativeScalerWithGradNormCount as NativeScaler
 from utils import multiple_samples_collate
@@ -146,6 +146,33 @@ def get_args():
     parser.set_defaults(use_mean_pooling=True)
     parser.add_argument('--use_cls', action='store_false', dest='use_mean_pooling')
 
+
+    # CLIP decpder parameters
+    parser.add_argument('--clip_teacher', default='clip_b16', type=str,
+                        help='Name of CLIP teacher')
+    parser.add_argument('--clip_input_resolution', default=224, type=int,
+                        help='input resolution of CLIP decoder')
+    parser.add_argument('--clip_loss_ratio', default=1., type=float,
+                        help='ratio for CLIP loss, pixel_loss + RATIO * clip_loss')
+    parser.add_argument('--clip_loss_type', default='l2', type=str,
+                        help='type of CLIP loss')
+    parser.add_argument('--clip_decoder_type', default='SA_Decoder', type=str,
+                        help='type of CLIP decoder')
+    parser.add_argument('--clip_decoder_embed_dim', default=512, type=int,
+                        help='embedding dimension of CLIP decoder')
+    parser.add_argument('--clip_output_dim', default=768, type=int,
+                        help='output dimension of CLIP decoder')
+    parser.add_argument('--clip_norm_type', default='l2', type=str,
+                        help='type of feature normalization')
+    parser.add_argument('--clip_return_attn', default=False, type=bool,
+                        help='whether return CLIP attention')
+    parser.add_argument('--clip_return_layer', default=1, type=int,
+                        help='number of CLIP return layers')
+    parser.add_argument('--clip_return_interval', default=1, type=float,
+                        help='interval of CLIP teacher return layers')
+    parser.add_argument('--clip_student_return_interval', default=1, type=float,
+                        help='interval of CLIP student return layers')
+
     # Dataset parameters
     parser.add_argument('--prefix', default='', type=str, help='prefix for data')
     parser.add_argument('--split', default=' ', type=str, help='split for metadata')
@@ -163,7 +190,11 @@ def get_args():
         'SSV2', 'UCF101', 'HMDB51', 'image_folder',
         'mitv1_sparse', 'ucf_hmdb'
         ], type=str, help='dataset')
-    
+    parser.add_argument('--data_set_target', default='Kinetics', choices=[
+        'Kinetics', 'Kinetics_sparse', 
+        'mitv1_sparse', 'ucf_hmdb', 'hmdb_ucf'
+        ], type=str, help='dataset')
+
     parser.add_argument('--num_segments', type=int, default=1)
     parser.add_argument('--num_frames', type=int, default=16)
     parser.add_argument('--sampling_rate', type=int, default=4)
@@ -244,31 +275,47 @@ def main(args, ds_init):
 
     cudnn.benchmark = True
 
-    dataset_train, args.nb_classes = build_dataset(is_train=True, test_mode=False, args=args)
+    teacher_model = eval(args.clip_teacher)(
+        clip_norm_type=args.clip_norm_type,
+        input_resolution=args.clip_input_resolution,
+        return_attn=args.clip_return_attn,
+        clip_return_layer=args.clip_return_layer,
+        clip_return_interval=args.clip_return_interval
+    )
+
+    dataset_train_src, args.nb_classes = build_dataset_colab(is_train=True, test_mode=False, target=False, args=args)
+    dataset_train_tgt, args.nb_classes = build_dataset_colab(is_train=True, test_mode=False, target=True, args=args)
+    
     if args.disable_eval_during_finetuning:
         dataset_val = None
     else:
-        dataset_val, _ = build_dataset(is_train=False, test_mode=False, args=args)
+        dataset_val_src, _ = build_dataset_colab(is_train=False, test_mode=False, target=False, args=args)
+        dataset_val_tgt, _ = build_dataset_colab(is_train=False, test_mode=True, target=True, args=args)
     #dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
     dataset_test = None
 
     num_tasks = utils.get_world_size()
     global_rank = utils.get_rank()
+    dataset_train = torch.utils.data.ConcatDataset([dataset_train_src, dataset_train_tgt]) 
     sampler_train = torch.utils.data.DistributedSampler(
         dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
     )
     print("Sampler_train = %s" % str(sampler_train))
+    
     if args.dist_eval:
-        if len(dataset_val) % num_tasks != 0:
+        if len(dataset_val_src) % num_tasks != 0:
             print('Warning: Enabling distributed evaluation with an eval dataset not divisible by process number. '
                     'This will slightly alter validation results as extra duplicate entries are added to achieve '
                     'equal num of samples per-process.')
-        sampler_val = torch.utils.data.DistributedSampler(
-            dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+        sampler_val_src = torch.utils.data.DistributedSampler(
+            dataset_val_src, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+        sampler_val_tgt = torch.utils.data.DistributedSampler(
+            dataset_val_tgt, num_replicas=num_tasks, rank=global_rank, shuffle=False)
         # sampler_test = torch.utils.data.DistributedSampler(
         #     dataset_test, num_replicas=num_tasks, rank=global_rank, shuffle=False)
     else:
-        sampler_val = torch.utils.data.SequentialSampler(dataset_val)
+        sampler_val_src = torch.utils.data.SequentialSampler(dataset_val_src)
+        sampler_val_tgt = torch.utils.data.SequentialSampler(dataset_val_tgt)
 
     if global_rank == 0 and args.log_dir is not None:
         os.makedirs(args.log_dir, exist_ok=True)
@@ -291,9 +338,18 @@ def main(args, ds_init):
         persistent_workers=True
     )
 
-    if dataset_val is not None:
-        data_loader_val = torch.utils.data.DataLoader(
-            dataset_val, sampler=sampler_val,
+
+    if dataset_val_src is not None:
+        data_loader_val_src = torch.utils.data.DataLoader(
+            dataset_val_src, sampler=sampler_val_src,
+            batch_size=int(1.5 * args.batch_size),
+            num_workers=args.num_workers,
+            pin_memory=args.pin_mem,
+            drop_last=False,
+            persistent_workers=True
+        )
+        data_loader_val_tgt = torch.utils.data.DataLoader(
+            dataset_val_tgt, sampler=sampler_val_tgt,
             batch_size=int(1.5 * args.batch_size),
             num_workers=args.num_workers,
             pin_memory=args.pin_mem,
@@ -435,9 +491,9 @@ def main(args, ds_init):
                 new_pos_embed = torch.cat((extra_tokens, pos_tokens), dim=1)
                 checkpoint_model['pos_embed'] = new_pos_embed
 
-        utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix)
 
     model.to(device)
+    teacher_model.to(device)
 
     model_ema = None
     if args.model_ema:
@@ -468,7 +524,8 @@ def main(args, ds_init):
     print("Batch size = %d" % total_batch_size)
     print("Repeated sample = %d" % args.num_sample)
     print("Update frequent = %d" % args.update_freq)
-    print("Number of training examples = %d" % len(dataset_train))
+    print("Number of source training examples = %d" % len(dataset_train_src))
+    print("Number of target training examples = %d" % len(dataset_train_tgt))
     print("Number of training training per epoch = %d" % num_training_steps_per_epoch)
 
     num_layers = model_without_ddp.get_num_layers()
@@ -499,6 +556,8 @@ def main(args, ds_init):
         if args.distributed:
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
             model_without_ddp = model.module
+            teacher_model = torch.nn.parallel.DistributedDataParallel(teacher_model, device_ids=[args.gpu], find_unused_parameters=False)
+
 
         optimizer = create_optimizer(
             args, model_without_ddp, skip_list=skip_weight_decay_list,
@@ -520,10 +579,14 @@ def main(args, ds_init):
     if mixup_fn is not None:
         # smoothing is handled with mixup label transform
         criterion = SoftTargetCrossEntropy()
+        criterion_target = SoftTargetCrossEntropy(reduction="none")
+        
     elif args.smoothing > 0.:
         criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
+        criterion_target = LabelSmoothingCrossEntropy(reduction="none")
     else:
         criterion = torch.nn.CrossEntropyLoss()
+        criterion_target = torch.nn.CrossEntropyLoss(reduction="none")
 
     print("criterion = %s" % str(criterion))
 
@@ -549,18 +612,21 @@ def main(args, ds_init):
 
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
-    max_accuracy = 0.0
+    max_accuracy_src = 0.0
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
         if log_writer is not None:
             log_writer.set_step(epoch * num_training_steps_per_epoch * args.update_freq)
-        train_stats = train_one_epoch(
+        train_stats_src, train_stats_tgt = train_one_epoch(
             model, criterion, data_loader_train, optimizer,
             device, epoch, loss_scaler, args.clip_grad, model_ema, mixup_fn,
             log_writer=log_writer, start_steps=epoch * num_training_steps_per_epoch,
             lr_schedule_values=lr_schedule_values, wd_schedule_values=wd_schedule_values,
             num_training_steps_per_epoch=num_training_steps_per_epoch, update_freq=args.update_freq,
+            teacher_model=teacher_model, clip_input_resolution=args.clip_input_resolution,
+            clip_loss_ratio=args.clip_loss_ratio, mask_type=args.mask_type, mask_ratio=args.mask_ratio,
+            clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target
         )
         if args.output_dir and args.save_ckpt:
             if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:
@@ -570,29 +636,40 @@ def main(args, ds_init):
             utils.save_latest_model(
                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                 loss_scaler=loss_scaler, epoch=epoch, model_name='latest', model_ema=model_ema)
-        if data_loader_val is not None:
-            test_stats = validation_one_epoch(data_loader_val, model, device)
+        if data_loader_val_src is not None:
+            test_stats_src = validation_one_epoch(data_loader_val_src, model, device)
+            test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device)
             timestep = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-            print(f"[{timestep}] Accuracy of the network on the {len(dataset_val)} val videos: {test_stats['acc1']:.1f}%")
-            if max_accuracy < test_stats["acc1"]:
-                max_accuracy = test_stats["acc1"]
+            print(f"[{timestep}] Accuracy of the network on the {len(dataset_val_src)} (source) val videos: {test_stats_src['acc1']:.1f}%")
+            print(f"[{timestep}] Accuracy of the network on the {len(dataset_val_tgt)} (source) val videos: {test_stats_tgt['acc1']:.1f}%")
+            
+            if max_accuracy_src < test_stats_src["acc1"]:
+                max_accuracy_src = test_stats_src["acc1"]
+            if max_accuracy_tgt < test_stats_tgt["acc1"]:
+                max_accuracy_tgt = test_stats_tgt["acc1"]
                 if args.output_dir and args.save_ckpt:
                     utils.save_latest_model(
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                         loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema)
-
-            print(f'Max accuracy: {max_accuracy:.2f}%')
+            print(f'Max accuracy -- src val: {max_accuracy_src:.2f}%')
+            print(f'Max accuracy -- tgt val: {max_accuracy_tgt:.2f}%')
             if log_writer is not None:
-                log_writer.update(val_acc1=test_stats['acc1'], head="perf", step=epoch)
-                log_writer.update(val_acc5=test_stats['acc5'], head="perf", step=epoch)
-                log_writer.update(val_loss=test_stats['loss'], head="perf", step=epoch)
+                log_writer.update(val_acc1_src=test_stats_src['acc1'], head="perf", step=epoch)
+                log_writer.update(val_acc5_src=test_stats_src['acc5'], head="perf", step=epoch)
+                log_writer.update(val_loss_src=test_stats_src['loss'], head="perf", step=epoch)
+                log_writer.update(val_acc1_tgt=test_stats_tgt['acc1'], head="perf", step=epoch)
+                log_writer.update(val_acc5_tgt=test_stats_tgt['acc5'], head="perf", step=epoch)
+                log_writer.update(val_loss_tgt=test_stats_tgt['loss'], head="perf", step=epoch)
 
-            log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
-                         **{f'val_{k}': v for k, v in test_stats.items()},
+            log_stats = {**{f'train_{k}_src': v for k, v in train_stats_src.items()},
+                         **{f'train_{k}_tgt': v for k, v in train_stats_tgt.items()},
+                         **{f'val_{k}_src': v for k, v in test_stats_src.items()},
+                         **{f'val_{k}_tgt': v for k, v in test_stats_tgt.items()},
                          'epoch': epoch,
                          'n_parameters': n_parameters}
         else:
-            log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
+            log_stats = {**{f'train_{k}': v for k, v in train_stats_src.items()},
+                         **{f'train_{k}': v for k, v in train_stats_tgt.items()},
                          'epoch': epoch,
                          'n_parameters': n_parameters}
         if args.output_dir and utils.is_main_process():
@@ -606,7 +683,7 @@ def main(args, ds_init):
         utils.auto_load_model(
             args=args, model=model, model_without_ddp=model_without_ddp,
             optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)
-    test_stats = final_test(data_loader_val, model, device, preds_file)
+    test_stats = final_test(data_loader_val_tgt, model, device, preds_file)
     torch.distributed.barrier()
     if global_rank == 0:
         print("Start merging results...")

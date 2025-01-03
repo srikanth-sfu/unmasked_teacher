@@ -9,6 +9,8 @@ from datasets.mixup import Mixup
 from timm.utils import accuracy, ModelEma
 import utils
 from scipy.special import softmax
+import torch.nn as nn
+
 
 
 def train_class_batch(model, samples, target, criterion):
@@ -21,13 +23,47 @@ def get_loss_scale_for_deepspeed(model):
     optimizer = model.optimizer
     return optimizer.loss_scale if hasattr(optimizer, "loss_scale") else optimizer.cur_scale
 
+def combine_labels(label1, conf1, label2, conf2, threshold):
+    """
+    Combines two labels based on their confidence scores and specified logic.
+
+    Args:
+        label_1 (str): First label.
+        conf_1 (float): Confidence score for label_1.
+        label_2 (str): Second label.
+        conf_2 (float): Confidence score for label_2.
+        threshold (float): Confidence threshold.
+
+    Returns:
+        str: Combined label or -1 if no conditions are met.
+    """
+    assert label1.shape == label2.shape == conf1.shape == conf2.shape, "Inputs must have the same shape"
+    
+    batch_size = label1.shape[0]
+    combined_labels = torch.full((batch_size,), -1, dtype=label1.dtype)  # Initialize with -1
+    
+    # Condition 1: Same label
+    same_label_mask = (label1 == label2)
+    combined_labels[same_label_mask] = label1[same_label_mask]
+
+    # Condition 2: Label 1 confidence > threshold and Label 2 confidence <= threshold
+    label1_high_mask = (conf1 > threshold) & (conf2 <= threshold)
+    combined_labels[label1_high_mask] = label1[label1_high_mask]
+
+    # Condition 3: Label 2 confidence > threshold and Label 1 confidence <= threshold
+    label2_high_mask = (conf2 > threshold) & (conf1 <= threshold)
+    combined_labels[label2_high_mask] = label2[label2_high_mask]
+
+    return combined_labels, (combined_labels != -1).type(label1.dtype), conf2
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
                     device: torch.device, epoch: int, loss_scaler, max_norm: float = 0,
                     model_ema: Optional[ModelEma] = None, mixup_fn: Optional[Mixup] = None, log_writer=None,
                     start_steps=None, lr_schedule_values=None, wd_schedule_values=None,
-                    num_training_steps_per_epoch=None, update_freq=None):
+                    num_training_steps_per_epoch=None, update_freq=None,
+                    teacher_model=None, clip_input_resolution=224, criterion_target=None,
+                    clip_loss_ratio=0.5, mask_type='tube', mask_ratio=0., clip_label_embedding=None):
     model.train(True)
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -41,7 +77,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     else:
         optimizer.zero_grad()
 
-    for data_iter_step, (samples, targets, _, _) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
+    for data_iter_step, (samples, targets, _, _, ds_id) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
+        samples_tgt = samples_tgt[ds_id==1]
+        samples, targets = samples[ds_id==0], targets[ds_id==0]
         step = data_iter_step // update_freq
         if step >= num_training_steps_per_epoch:
             continue
@@ -69,12 +107,50 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 loss, output = train_class_batch(
                     model, samples, targets, criterion)
 
-        loss_value = loss.item()
 
+        with torch.no_grad():
+            # calculate the predicted CLIP features
+            B, C, T, H, W = samples_tgt.shape
+            clip_input_resolution = 224
+            if H != clip_input_resolution:
+                clip_videos = torch.nn.functional.interpolate(
+                    samples_tgt.view(B, C*T, H, W), 
+                    size=(clip_input_resolution, clip_input_resolution), 
+                    mode='bicubic', align_corners=False
+                )
+                clip_videos = clip_videos.view(B, C, T, clip_input_resolution, clip_input_resolution)
+            else:
+                clip_videos = samples_tgt
+            
+            with torch.cuda.amp.autocast():
+                norm_clip, attn = teacher_model(clip_videos)
+                clip_labels = (norm_clip @ clip_label_embedding.T).reshape(B,-1).mean(dim=-1).squeeze(0)
+                src_encoder_labels_conf = model(samples_tgt)
+                src_encoder_labels = nn.functional.softmax(src_encoder_labels_conf,dim=-1)
+                target_labels, target_mask, target_conf = combine_labels(clip_labels, clip_label_conf, src_encoder_labels, src_encoder_labels_conf, threshold)
+            
+            
+            BT, N = attn.shape
+            N_vis = N - int(N * mask_ratio)
+            importance = torch.multinomial(attn, N)
+            bool_masked_pos = torch.ones((BT, N))
+            pos1 = torch.arange(BT).view(-1, 1).repeat(1, N_vis)
+            pos2 = importance[:, :N_vis]
+            bool_masked_pos[pos1, pos2] = 0
+            bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
+
+        with torch.cuda.amp.autocast():
+            outputs_clip = model(samples_tgt, bool_masked_pos)
+            loss_target = criterion_target(outputs_clip, target_labels)
+            loss_target = (loss_target * target_mask * target_conf).mean()
+
+        loss += loss_target
+        loss_value = loss.item()
+        
         if not math.isfinite(loss_value):
             print("Loss is {}, stopping training".format(loss_value))
             sys.exit(1)
-
+        
         if loss_scaler is None:
             loss /= update_freq
             model.backward(loss)
@@ -104,10 +180,14 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         if mixup_fn is None:
             class_acc = (output.max(-1)[-1] == targets).float().mean()
+            class_acc_target = ((outputs_clip.max(-1)[-1] == target_labels)*target_mask).float().mean()
+            
         else:
             class_acc = None
         metric_logger.update(loss=loss_value)
+        metric_logger.update(loss_target=loss_target.item())
         metric_logger.update(class_acc=class_acc)
+        metric_logger.update(class_acc_target=class_acc_target)
         metric_logger.update(loss_scale=loss_scale_value)
         min_lr = 10.
         max_lr = 0.
@@ -126,7 +206,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         if log_writer is not None:
             log_writer.update(loss=loss_value, head="loss")
+            log_writer.update(loss_target=loss_target.item(), head="loss")
             log_writer.update(class_acc=class_acc, head="loss")
+            log_writer.update(class_acc_target=class_acc_target, head="loss")
+
             log_writer.update(loss_scale=loss_scale_value, head="opt")
             log_writer.update(lr=max_lr, head="opt")
             log_writer.update(min_lr=min_lr, head="opt")
