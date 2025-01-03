@@ -4,6 +4,7 @@ import numpy as np
 import time
 import torch
 import torch.backends.cudnn as cudnn
+import torch.nn as nn
 import json
 import os
 from functools import partial
@@ -23,6 +24,22 @@ from utils import multiple_samples_collate
 import utils
 from models import *
 
+class LabelSmoothingCrossEntropyNoReduction(nn.Module):
+    """ NLL loss with label smoothing.
+    """
+    def __init__(self, smoothing=0.1):
+        super(LabelSmoothingCrossEntropyNoReduction, self).__init__()
+        assert smoothing < 1.0
+        self.smoothing = smoothing
+        self.confidence = 1. - smoothing
+
+    def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        logprobs = F.log_softmax(x, dim=-1)
+        nll_loss = -logprobs.gather(dim=-1, index=target.unsqueeze(1))
+        nll_loss = nll_loss.squeeze(1)
+        smooth_loss = -logprobs.mean(dim=-1)
+        loss = self.confidence * nll_loss + self.smoothing * smooth_loss
+        return loss
 
 def get_args():
     parser = argparse.ArgumentParser('VideoMAE fine-tuning and evaluation script for video classification', add_help=False)
@@ -496,7 +513,7 @@ def main(args, ds_init):
         
     elif args.smoothing > 0.:
         criterion = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-        criterion_target = LabelSmoothingCrossEntropy(reduction="none")
+        criterion_target = LabelSmoothingCrossEntropyNoReduction(smoothing=args.smoothing)
     else:
         criterion = torch.nn.CrossEntropyLoss()
         criterion_target = torch.nn.CrossEntropyLoss(reduction="none")
