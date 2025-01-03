@@ -49,6 +49,7 @@ class VideoClsColabDataset(Dataset):
         self.num_crop = num_crop
         self.test_num_crop = test_num_crop
         self.args = args
+        self.video_ext = video_ext
         self.aug = False
         self.rand_erase = False
         assert num_segment == 1
