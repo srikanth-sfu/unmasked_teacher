@@ -16,7 +16,7 @@ python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.p
         --finetune ${MODEL_PATH} \
         --log_dir ${OUTPUT_DIR} \
         --output_dir ${OUTPUT_DIR} \
-        --batch_size 7 \
+        --batch_size 5 \
         --num_sample 1 \
         --input_size 224 \
         --short_side_size 224 \
@@ -26,7 +26,7 @@ python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.p
         --warmup_iterations 4000 \
         --iterations 20000 \
         --tubelet_size 1 \
-        --lr 2.5e-5 \
+        --lr 1e-5 \
         --drop_path 0.1 \
         --opt adamw \
         --opt_betas 0.9 0.999 \
