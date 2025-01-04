@@ -10,7 +10,7 @@ from timm.utils import accuracy, ModelEma
 import utils
 from scipy.special import softmax
 import torch.nn as nn
-
+from timm.models._manipulate import checkpoint_seq
 
 
 def train_class_batch(model, samples, target, criterion):
@@ -146,8 +146,17 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
 
         with torch.cuda.amp.autocast():
-            outputs_clip = model(samples_tgt)
-            print(outputs_clip.shape, bool_masked_pos.shape)
+            outputs_clip = model._pos_embed(model.patch_embed(samples_tgt))
+            outputs_clip = outputs_clip[~bool_masked_pos]
+            outputs_clip = model.patch_drop(model.norm_pre(outputs_clip))
+            if model.grad_checkpointing and not torch.jit.is_scripting():
+                outputs_clip = checkpoint_seq(model.blocks, outputs_clip)
+            else:
+                outputs_clip = model.blocks(outputs_clip)
+            outputs_clip = model.norm(outputs_clip)
+            print(outputs_clip.shape)
+            os._exit(1)
+            outputs_clip = model.forward_head(outputs_clip)
             norm_clip = outputs_clip.reshape(B,-1,norm_clip.shape[-1])[~bool_masked_pos].mean(dim=1)
             loss_target = criterion_target(outputs_clip, target_labels)
             loss_target = (loss_target * target_mask * target_conf).mean()
