@@ -146,7 +146,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
 
         with torch.cuda.amp.autocast():
-            outputs_clip = model(samples_tgt)
+            outputs_clip, _ = model(samples_tgt)
+            print(outputs_clip.shape, booled_masked_pos.shape)
             norm_clip = outputs_clip.reshape(B,-1,norm_clip.shape[-1])[~bool_masked_pos].mean(dim=1)
             loss_target = criterion_target(outputs_clip, target_labels)
             loss_target = (loss_target * target_mask * target_conf).mean()
