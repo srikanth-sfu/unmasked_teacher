@@ -40,7 +40,7 @@ def combine_labels(label1, conf1, label2, conf2, threshold):
     assert label1.shape == label2.shape == conf1.shape == conf2.shape, "Inputs must have the same shape"
     
     batch_size = label1.shape[0]
-    combined_labels = torch.full((batch_size,), -1, dtype=label1.dtype)  # Initialize with -1
+    combined_labels = torch.full((batch_size,), -1, dtype=label1.dtype).to(label1.device)  # Initialize with -1
     
     # Condition 1: Same label
     same_label_mask = (label1 == label2)
