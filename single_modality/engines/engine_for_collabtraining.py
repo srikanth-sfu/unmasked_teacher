@@ -95,7 +95,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
         samples_tgt = samples_tgt.to(device, non_blocking=True)
-        clip_label_embedding = clip_label_embedding.to(device, non_blocking=True)
+        clip_label_embedding = torch.from_numpy(clip_label_embedding).to(device, non_blocking=True)
 
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
