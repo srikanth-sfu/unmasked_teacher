@@ -17,6 +17,7 @@ import random
 
 from tensorboardX import SummaryWriter
 import torch.nn.functional as F
+import torch.nn as nn
 
 class LabelSmoothingCrossEntropyNoReduction(nn.Module):
     """ NLL loss with label smoothing.
