@@ -10,6 +10,8 @@ from timm.utils import accuracy, ModelEma
 import utils
 from scipy.special import softmax
 import torch.nn as nn
+import torch.utils.checkpoint as checkpoint
+
 
 def train_class_batch(model, samples, target, criterion):
     outputs = model(samples)
@@ -144,18 +146,31 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
 
         with torch.cuda.amp.autocast():
-            outputs_clip = model.patch_embed(samples_tgt)
-            outputs_clip = outputs_clip + model.pos_embed.to(outputs_clip.device)
-            outputs_clip = outputs_clip[~bool_masked_pos]
-            outputs_clip = model.pos_drop(outputs_clip)
-            for block in model.blocks:
-                outputs_clip = block(outputs_clip)
-            outputs_clip = model.norm(outputs_clip)
-            if model.head_dist is None:
-                outputs_clip = model.head(outputs_clip)
-            print(outputs_clip.shape)
-            os._exit(1)
-            outputs_clip = model.forward_head(outputs_clip)
+            x = model.patch_embed(clip_videos)
+            B, _, _ = x.size()
+
+            if model.pos_embed is not None:
+                x = x + model.pos_embed.expand(B, -1, -1).type_as(x).to(x.device).clone().detach()
+            B, _, C = x.shape
+            x = x[~bool_masked_pos].reshape(B, -1, C) # ~mask means visible
+        
+            x = model.pos_drop(x)
+
+            for idx, blk in enumerate(model.blocks):
+                if model.use_checkpoint and idx < model.checkpoint_num:
+                    x = checkpoint.checkpoint(blk, x)
+                else:
+                    x = blk(x)
+
+            x = model.norm(x)
+            if model.fc_norm is not None:
+                x = model.fc_norm(x.mean(1))
+            else:
+                x = x[:, 0]
+            
+            outputs_clip = model.head(model.fc_dropout(x))
+
+
             loss_target = criterion_target(outputs_clip, target_labels)
             loss_target = (loss_target * target_mask * target_conf).mean()
 
