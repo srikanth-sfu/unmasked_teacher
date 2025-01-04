@@ -21,25 +21,9 @@ from datasets import build_dataset_colab
 from engines.engine_for_collabtraining import train_one_epoch, validation_one_epoch, final_test, merge
 from utils import NativeScalerWithGradNormCount as NativeScaler
 from utils import multiple_samples_collate
-import utils
+from utils import LabelSmoothingCrossEntropyNoReduction
 from models import *
 
-class LabelSmoothingCrossEntropyNoReduction(nn.Module):
-    """ NLL loss with label smoothing.
-    """
-    def __init__(self, smoothing=0.1):
-        super(LabelSmoothingCrossEntropyNoReduction, self).__init__()
-        assert smoothing < 1.0
-        self.smoothing = smoothing
-        self.confidence = 1. - smoothing
-
-    def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
-        logprobs = F.log_softmax(x, dim=-1)
-        nll_loss = -logprobs.gather(dim=-1, index=target.unsqueeze(1))
-        nll_loss = nll_loss.squeeze(1)
-        smooth_loss = -logprobs.mean(dim=-1)
-        loss = self.confidence * nll_loss + self.smoothing * smooth_loss
-        return loss
 
 def get_args():
     parser = argparse.ArgumentParser('VideoMAE fine-tuning and evaluation script for video classification', add_help=False)
