@@ -95,6 +95,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
         samples_tgt = samples_tgt.to(device, non_blocking=True)
+        clip_label_embedding = clip_label_embedding.to(device, non_blocking=True)
 
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
@@ -125,6 +126,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             
             with torch.cuda.amp.autocast():
                 norm_clip, attn = teacher_model(clip_videos)
+                print(norm_clip.shape, clip_label_embedding.shape)
                 clip_labels = (norm_clip @ clip_label_embedding.T).reshape(B,-1).mean(dim=-1).squeeze(0)
                 src_encoder_labels_conf = model(samples_tgt)
                 src_encoder_labels = nn.functional.softmax(src_encoder_labels_conf,dim=-1)
