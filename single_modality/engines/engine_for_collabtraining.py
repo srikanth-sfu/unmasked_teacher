@@ -10,7 +10,6 @@ from timm.utils import accuracy, ModelEma
 import utils
 from scipy.special import softmax
 import torch.nn as nn
-from timm.models import checkpoint_seq
 
 def train_class_batch(model, samples, target, criterion):
     outputs = model(samples)
