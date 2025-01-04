@@ -147,7 +147,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             outputs_clip = model.patch_embed(samples_tgt)
             outputs_clip = outputs_clip + model.pos_embed.to(outputs_clip.device)
             outputs_clip = outputs_clip[~bool_masked_pos]
-            outputs_clip = model.norm(model.blocks(model.pos_drop(outputs_clip)))
+            outputs_clip = model.pos_drop(outputs_clip)
+            outputs_clip = model.norm(model.blocks(outputs_clip))
             if model.head_dist is None:
                 outputs_clip = model.head(outputs_clip)
             print(outputs_clip.shape)
