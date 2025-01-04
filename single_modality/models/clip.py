@@ -152,13 +152,14 @@ class VisionTransformer(nn.Module):
 
         x = x.permute(1, 0, 2)  # NLD -> LND
         x, attn = self.transformer(x)
-        print("Inside teacher", x.shape)
 
         K = x.shape[0]
         x = self.ln_post(x[:, 1:, :, :])  # [HW, NT, C]
+        print("Inside teacher1", x.shape)
         x = x.view(K, HW, N, T, C).permute(0, 2, 3, 1, 4).reshape(K, N, T * HW, C)  # [K, N, THW, C]
         x = x @ self.proj
-        
+        print("Inside teacher", x.shape)
+
         if self.clip_norm_type == 'l2':
             x = x / x.norm(dim=-1, keepdim=True)
         elif self.clip_norm_type == 'none':
