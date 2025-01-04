@@ -23,7 +23,7 @@ from utils import NativeScalerWithGradNormCount as NativeScaler
 from utils import multiple_samples_collate
 from utils import LabelSmoothingCrossEntropyNoReduction
 from models import *
-
+import utils
 
 def get_args():
     parser = argparse.ArgumentParser('VideoMAE fine-tuning and evaluation script for video classification', add_help=False)
