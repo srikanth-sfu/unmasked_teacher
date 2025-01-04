@@ -126,9 +126,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             
             with torch.cuda.amp.autocast():
                 norm_clip, attn = teacher_model(clip_videos)
-                norm_clip = norm_clip.reshape(B,-1,norm_clip.shape[-1]).mean(dim=1)
+                norm_clip = norm_clip.reshape(B,T,-1,norm_clip.shape[-1]).mean(dim=2).reshape(-1,norm_clip.shape[-1])
                 clip_output = (norm_clip @ clip_label_embedding.T)#.reshape(B,-1).mean(dim=-1).squeeze(0)
-                clip_label_conf = nn.functional.softmax(clip_output, dim=-1)
+                clip_label_conf = nn.functional.softmax(clip_output, dim=-1).reshape(B,-1,clip_output.shape[-1]).mean(dim=1)
                 clip_label_conf, clip_labels = clip_label_conf.max(-1)
                 src_output = model(samples_tgt)
                 src_encoder_labels_conf = nn.functional.softmax(src_output,dim=-1)
