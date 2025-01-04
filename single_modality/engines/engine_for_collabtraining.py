@@ -145,14 +145,28 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
 
         with torch.cuda.amp.autocast():
-            outputs_clip = model._pos_embed(model.patch_embed(samples_tgt))
-            outputs_clip = outputs_clip[~bool_masked_pos]
-            outputs_clip = model.patch_drop(model.norm_pre(outputs_clip))
-            if model.grad_checkpointing and not torch.jit.is_scripting():
-                outputs_clip = checkpoint_seq(model.blocks, outputs_clip)
+            outputs_clip = model.patch_embed(samples_tgt)
+            cls_token = model.cls_token.expand(outputs_clip.shape[0], -1, -1)
+            if model.dist_token is None:
+                outputs_clip = torch.cat((cls_token, outputs_clip), dim=1)
             else:
-                outputs_clip = model.blocks(outputs_clip)
-            outputs_clip = model.norm(outputs_clip)            
+                outputs_clip = torch.cat((cls_token, model.dist_token.expand(outputs_clip.shape[0], -1, -1), outputs_clip), dim=1)
+            outputs_clip = outputs_clip + model.pos_embed
+            outputs_clip = outputs_clip[~bool_masked_pos]
+            outputs_clip = model.norm(model.blocks(model.patch_drop(outputs_clip)))
+            if model.dist_token is None:
+                outputs_clip = model.pre_logits(outputs_clip[:, 0])
+            else:
+                outputs_clip = outputs_clip[:, 0], outputs_clip[:, 1]
+            if model.head_dist is not None:
+                x, x_dist = model.head(outputs_clip[0]), model.head_dist(outputs_clip[1])  # x must be a tuple
+                if model.training and not torch.jit.is_scripting():
+                    # during inference, return the average of both classifier predictions
+                    outputs_clip = x, x_dist
+                else:
+                    outputs_clip = (x + x_dist) / 2
+            else:
+                outputs_clip = model.head(outputs_clip)
             print(outputs_clip.shape)
             os._exit(1)
             outputs_clip = model.forward_head(outputs_clip)
