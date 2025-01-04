@@ -134,13 +134,14 @@ class VisionTransformer(nn.Module):
 
     def forward(self, x, mask=None):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
+        print("Inside teacher 1", x.shape)
         N, C, T, H, W = x.shape
         x = x.permute(0, 2, 3, 4, 1).reshape(N * T, H * W, C)
 
         x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
         x = self.ln_pre(x)
-
+        print("Inside teacher", x.shape)
         if mask is not None:
             cls_tokens = x[:, :1, :]
             x = x[:, 1:]
