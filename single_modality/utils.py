@@ -19,6 +19,24 @@ from tensorboardX import SummaryWriter
 import torch.nn.functional as F
 import torch.nn as nn
 
+def balanced_batch_generator(loader1, loader2):
+    iter1, iter2 = iter(loader1), iter(loader2)
+    while True:
+        try:
+            batch1 = next(iter1)
+        except StopIteration:
+            iter1 = iter(loader1)
+            batch1 = next(iter1)
+        try:
+            batch2 = next(iter2)
+        except StopIteration:
+            iter2 = iter(loader2)
+            batch2 = next(iter2)
+        yield {
+            "data1": batch1,
+            "data2": batch2,
+            "dataloader_ids": [1] * len(batch1) + [2] * len(batch2),
+        }
 class LabelSmoothingCrossEntropyNoReduction(nn.Module):
     """ NLL loss with label smoothing.
     """

@@ -302,10 +302,14 @@ def main(args, ds_init):
 
     num_tasks = utils.get_world_size()
     global_rank = utils.get_rank()
-    dataset_train = torch.utils.data.ConcatDataset([dataset_train_src, dataset_train_tgt]) 
-    sampler_train = torch.utils.data.DistributedSampler(
-        dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
+    
+    sampler_train_src = torch.utils.data.DistributedSampler(
+        dataset_train_src, num_replicas=num_tasks, rank=global_rank, shuffle=True
     )
+    sampler_train_tgt = torch.utils.data.DistributedSampler(
+        dataset_train_tgt, num_replicas=num_tasks, rank=global_rank, shuffle=True
+    )
+    
     print("Sampler_train = %s" % str(sampler_train))
     
     if args.dist_eval:
@@ -334,8 +338,17 @@ def main(args, ds_init):
     else:
         collate_func = None
 
-    data_loader_train = torch.utils.data.DataLoader(
-        dataset_train, sampler=sampler_train,
+    data_loader_train_src = torch.utils.data.DataLoader(
+        dataset_train_src, sampler=sampler_train_src,
+        batch_size=args.batch_size,
+        num_workers=args.num_workers,
+        pin_memory=args.pin_mem,
+        drop_last=True,
+        collate_fn=collate_func,
+        persistent_workers=True
+    )
+    data_loader_train_tgt = torch.utils.data.DataLoader(
+        dataset_train_tgt, sampler=sampler_train_src,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=args.pin_mem,
@@ -344,6 +357,7 @@ def main(args, ds_init):
         persistent_workers=True
     )
 
+    data_loader_train = utils.balanced_batch_generator(data_loader_train_src, data_loader_train_tgt)
 
     if dataset_val_src is not None:
         data_loader_val_src = torch.utils.data.DataLoader(
