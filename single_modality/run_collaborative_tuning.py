@@ -458,7 +458,7 @@ def main(args, ds_init):
     print("Update frequent = %d" % args.update_freq)
     print("Number of source training examples = %d" % len(dataset_train_src))
     print("Number of target training examples = %d" % len(dataset_train_tgt))
-    print("Number of training training per epoch = %d" % num_training_steps_per_epoch)
+    print("Number of training steps per epoch = %d" % num_training_steps_per_epoch)
 
     num_layers = model_without_ddp.get_num_layers()
     if args.layer_decay < 1.0:

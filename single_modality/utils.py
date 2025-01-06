@@ -24,12 +24,12 @@ def balanced_batch_generator(loader1, loader2):
     while True:
         try:
             batch1 = next(iter1)
-        except StopIteration:
+        except:
             iter1 = iter(loader1)
             batch1 = next(iter1)
         try:
             batch2 = next(iter2)
-        except StopIteration:
+        except:
             iter2 = iter(loader2)
             batch2 = next(iter2)
         samples1, targets1, _, _, ds_id1 = batch1
