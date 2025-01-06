@@ -154,7 +154,6 @@ class VisionTransformer(nn.Module):
         x, attn = self.transformer(x)
 
         K = x.shape[0]
-        print("CLIP 4", x.shape)
         x = self.ln_post(x[:, 1:, :, :])  # [HW, NT, C]
         x = x.view(K, HW, N, T, C).permute(0, 2, 3, 1, 4).reshape(K, N, T * HW, C)  # [K, N, THW, C]
         x = x @ self.proj
@@ -165,7 +164,6 @@ class VisionTransformer(nn.Module):
             pass
         else:
             raise NotImplementedError
-        print("CLIP 5", x.shape)
         if self.return_attn:
             return x, attn[:, 0, 1:]
         else:
