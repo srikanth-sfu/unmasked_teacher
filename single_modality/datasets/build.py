@@ -79,7 +79,7 @@ def build_pretraining_dataset(args, video_ext=None):
 def build_dataset(is_train, test_mode, args, ds=None):
     if ds is None:
         ds = args.data_set
-    print(f'Use Dataset: {ds}')
+    print(f'Use Dataset: {ds}', is_train)
     if ds == 'ucf_hmdb':
         mode = None
         anno_path = None
