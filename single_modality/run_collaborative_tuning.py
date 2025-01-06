@@ -348,7 +348,7 @@ def main(args, ds_init):
         persistent_workers=True
     )
     data_loader_train_tgt = torch.utils.data.DataLoader(
-        dataset_train_tgt, sampler=sampler_train_src,
+        dataset_train_tgt, sampler=sampler_train_tgt,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=args.pin_mem,
