@@ -164,9 +164,9 @@ class MetricLogger(object):
         iter_time = SmoothedValue(fmt='{avg:.4f} (max: {max:.4f})')
         data_time = SmoothedValue(fmt='{avg:.4f} (max: {max:.4f})')
         if len_iterable is None:
-            space_fmt = ':' + str(len(str(len(iterable)))) + 'd'
-        else:
-            space_fmt = ':' + str(len(str(len_iterable))) + 'd'
+            len_iterable = len(iterable)
+
+        space_fmt = ':' + str(len(str(len_iterable))) + 'd'
         log_msg = [
             header,
             '[{0' + space_fmt + '}/{1}]',
@@ -184,17 +184,17 @@ class MetricLogger(object):
             yield obj
             iter_time.update(time.time() - end)
             if i % print_freq == 0 or i == len(iterable) - 1:
-                eta_seconds = iter_time.global_avg * (len(iterable) - i)
+                eta_seconds = iter_time.global_avg * (len_iterable - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
                 if torch.cuda.is_available():
                     print(log_msg.format(
-                        i, len(iterable), eta=eta_string,
+                        i, len_iterable, eta=eta_string,
                         meters=str(self),
                         time=str(iter_time), data=str(data_time),
                         memory=torch.cuda.max_memory_allocated() / MB))
                 else:
                     print(log_msg.format(
-                        i, len(iterable), eta=eta_string,
+                        i, len_iterable, eta=eta_string,
                         meters=str(self),
                         time=str(iter_time), data=str(data_time)))
             i += 1
@@ -202,7 +202,7 @@ class MetricLogger(object):
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
         print('{} Total time: {} ({:.4f} s / it)'.format(
-            header, total_time_str, total_time / len(iterable)))
+            header, total_time_str, total_time / len_iterable))
 
     def log_every_joint(self, video_loader, image_loader, print_freq, header=None, image_num_ratio=1.0):
         # prepare random squeue
