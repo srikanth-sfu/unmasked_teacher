@@ -553,7 +553,7 @@ def main(args, ds_init):
             
         if log_writer is not None:
             log_writer.set_step(epoch * num_training_steps_per_epoch * args.update_freq)
-        train_stats_src, train_stats_tgt = train_one_epoch(
+        train_stats = train_one_epoch(
             model, criterion, data_loader_train, optimizer,
             device, epoch, loss_scaler, args.clip_grad, model_ema, mixup_fn,
             log_writer=log_writer, start_steps=epoch * num_training_steps_per_epoch,
@@ -562,7 +562,7 @@ def main(args, ds_init):
             teacher_model=teacher_model, clip_input_resolution=args.clip_input_resolution,
             clip_loss_ratio=args.clip_loss_ratio, mask_ratio=args.mask_ratio,
             clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target,
-            len_iterable=len(data_loader_train_src)
+            len_iterable=max(len(data_loader_train_src), len(data_loader_train_tgt))
         )
         if args.output_dir and args.save_ckpt:
             if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:
@@ -597,15 +597,13 @@ def main(args, ds_init):
                 log_writer.update(val_acc5_tgt=test_stats_tgt['acc5'], head="perf", step=epoch)
                 log_writer.update(val_loss_tgt=test_stats_tgt['loss'], head="perf", step=epoch)
 
-            log_stats = {**{f'train_{k}_src': v for k, v in train_stats_src.items()},
-                         **{f'train_{k}_tgt': v for k, v in train_stats_tgt.items()},
+            log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                          **{f'val_{k}_src': v for k, v in test_stats_src.items()},
                          **{f'val_{k}_tgt': v for k, v in test_stats_tgt.items()},
                          'epoch': epoch,
                          'n_parameters': n_parameters}
         else:
-            log_stats = {**{f'train_{k}': v for k, v in train_stats_src.items()},
-                         **{f'train_{k}': v for k, v in train_stats_tgt.items()},
+            log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                          'epoch': epoch,
                          'n_parameters': n_parameters}
         if args.output_dir and utils.is_main_process():
