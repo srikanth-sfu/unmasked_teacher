@@ -135,7 +135,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 src_encoder_labels_conf, src_encoder_labels = src_encoder_labels_conf.max(-1)
                 target_labels, target_mask, target_conf = combine_labels(clip_labels, clip_label_conf, src_encoder_labels, src_encoder_labels_conf, threshold=0.1)
         
-            print("Engine 1", target_labels.shape, target_mask.shape, target_conf.shape)
             BT, N = attn.shape
             N_vis = N - int(N * mask_ratio)
             importance = torch.multinomial(attn, N)
@@ -170,9 +169,11 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             
             outputs_clip = model.head(model.fc_dropout(x))
 
-
+            print("Engine1", outputs_clip.shape)
             loss_target = criterion_target(outputs_clip, target_labels)
+            print("Engine1", loss_target)
             loss_target = (loss_target * target_mask * target_conf).mean()
+            print("Engine1 post processed", loss_target)
 
         loss += loss_target
         loss_value = loss.item()
