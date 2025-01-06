@@ -182,10 +182,13 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         
         print("Engine 1", "Post process begin")
         if loss_scaler is None:
+            print("Engine 1", "Post process begin100")
             loss /= update_freq
+            print("Engine 1", "Post process begin10")
             model.backward(loss)
+            print("Engine 1", "Post process begin11")
             model.step()
-            print("Engine 1", "Post process begin1")
+            print("Engine 1", "Post process begin12")
             if (data_iter_step + 1) % update_freq == 0:
                 # model.zero_grad()
                 # Deepspeed will call step() & model.zero_grad() automatic
