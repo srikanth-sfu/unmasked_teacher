@@ -104,8 +104,6 @@ class VideoClsDataset(Dataset):
             args = self.args 
             scale_t = 1
             sample = self.dataset_samples[index]
-            if not sample.endswith(args.video_ext):
-                sample += args.video_ext
             print('Kinetics', sample)
             os._exit(1)
             buffer = self.loadvideo_decord(sample, sample_rate_scale=scale_t) # T H W C
@@ -135,8 +133,6 @@ class VideoClsDataset(Dataset):
         elif self.mode == 'validation':
             args = self.args
             sample = self.dataset_samples[index]
-            if not sample.endswith(args.video_ext):
-                sample += args.video_ext
             buffer = self.loadvideo_decord(sample)
             if len(buffer) == 0:
                 while len(buffer) == 0:
@@ -150,8 +146,6 @@ class VideoClsDataset(Dataset):
         elif self.mode == 'test':
             args = self.args
             sample = self.test_dataset[index]
-            if not sample.endswith(args.video_ext):
-                sample += args.video_ext
             chunk_nb, split_nb = self.test_seg[index]
             buffer = self.loadvideo_decord(sample, chunk_nb=chunk_nb)
 
