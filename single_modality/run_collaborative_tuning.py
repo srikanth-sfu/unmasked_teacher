@@ -577,7 +577,7 @@ def main(args, ds_init):
             test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device)
             timestep = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             print(f"[{timestep}] Accuracy of the network on the {len(dataset_val_src)} (source) val videos: {test_stats_src['acc1']:.1f}%")
-            print(f"[{timestep}] Accuracy of the network on the {len(dataset_val_tgt)} (source) val videos: {test_stats_tgt['acc1']:.1f}%")
+            print(f"[{timestep}] Accuracy of the network on the {len(dataset_val_tgt)} (target) val videos: {test_stats_tgt['acc1']:.1f}%")
             
             if max_accuracy_src < test_stats_src["acc1"]:
                 max_accuracy_src = test_stats_src["acc1"]
