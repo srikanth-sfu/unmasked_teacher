@@ -545,7 +545,7 @@ def main(args, ds_init):
 
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
-    max_accuracy_src = 0.0
+    max_accuracy_src, max_accuracy_tgt = 0.0, 0.0
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             data_loader_train_src.sampler.set_epoch(epoch)
