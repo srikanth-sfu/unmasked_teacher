@@ -76,9 +76,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         model.micro_steps = 0
     else:
         optimizer.zero_grad()
+    clip_label_embedding = torch.from_numpy(clip_label_embedding).to(device, non_blocking=True)
 
     for data_iter_step, (samples, targets, _, _, ds_id) in enumerate(metric_logger.log_every(data_loader, print_freq, header, len_iterable)):
-        print("Engine", samples.shape, ds_id)
         samples_tgt = samples[ds_id==1]
         samples, targets = samples[ds_id==0], targets[ds_id==0]
         step = data_iter_step // update_freq
@@ -96,7 +96,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
         samples_tgt = samples_tgt.to(device, non_blocking=True)
-        clip_label_embedding = torch.from_numpy(clip_label_embedding).to(device, non_blocking=True)
 
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
@@ -180,15 +179,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             print("Loss is {}, stopping training".format(loss_value))
             sys.exit(1)
         
-        print("Engine 1", "Post process begin")
         if loss_scaler is None:
-            print("Engine 1", "Post process begin100")
             loss /= update_freq
-            print("Engine 1", "Post process begin10")
             model.backward(loss)
-            print("Engine 1", "Post process begin11")
             model.step()
-            print("Engine 1", "Post process begin12")
             if (data_iter_step + 1) % update_freq == 0:
                 # model.zero_grad()
                 # Deepspeed will call step() & model.zero_grad() automatic
@@ -203,14 +197,12 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             grad_norm = loss_scaler(loss, optimizer, clip_grad=max_norm,
                                     parameters=model.parameters(), create_graph=is_second_order,
                                     update_grad=(data_iter_step + 1) % update_freq == 0)
-            print("Engine 1", "Post process begin1")
             if (data_iter_step + 1) % update_freq == 0:
                 optimizer.zero_grad()
                 if model_ema is not None:
                     model_ema.update(model)
             loss_scale_value = loss_scaler.state_dict()["scale"]
         torch.cuda.synchronize()
-        print("Engine 1", "Post process midway")
         
         if mixup_fn is None:
             class_acc = (output.max(-1)[-1] == targets).float().mean()
@@ -251,10 +243,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             log_writer.update(grad_norm=grad_norm, head="opt")
 
             log_writer.set_step()
-        print("Engine 1", "Post process end")
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
-    print("Averaged stats:", metric_logger)
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 
