@@ -296,7 +296,7 @@ def main(args, ds_init):
         dataset_val = None
     else:
         dataset_val_src, _ = build_dataset_colab(is_train=False, test_mode=False, target=False, args=args)
-        dataset_val_tgt, _ = build_dataset_colab(is_train=False, test_mode=True, target=True, args=args)
+        dataset_val_tgt, _ = build_dataset_colab(is_train=False, test_mode=False, target=True, args=args)
     #dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
     dataset_test = None
 
