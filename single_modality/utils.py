@@ -155,7 +155,7 @@ class MetricLogger(object):
     def add_meter(self, name, meter):
         self.meters[name] = meter
 
-    def log_every(self, iterable, print_freq, header=None):
+    def log_every(self, iterable, print_freq, header=None, len_iterable=None):
         i = 0
         if not header:
             header = ''
@@ -163,7 +163,10 @@ class MetricLogger(object):
         end = time.time()
         iter_time = SmoothedValue(fmt='{avg:.4f} (max: {max:.4f})')
         data_time = SmoothedValue(fmt='{avg:.4f} (max: {max:.4f})')
-        space_fmt = ':' + str(len(str(len(iterable)))) + 'd'
+        if len_iterable is None:
+            space_fmt = ':' + str(len(str(len(iterable)))) + 'd'
+        else:
+            space_fmt = ':' + str(len(str(len_iterable))) + 'd'
         log_msg = [
             header,
             '[{0' + space_fmt + '}/{1}]',
