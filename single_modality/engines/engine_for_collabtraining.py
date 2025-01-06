@@ -169,11 +169,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             
             outputs_clip = model.head(model.fc_dropout(x))
 
-            print("Engine1", outputs_clip.shape)
             loss_target = criterion_target(outputs_clip, target_labels)
-            print("Engine1", loss_target)
             loss_target = (loss_target * target_mask * target_conf).mean()
-            print("Engine1 post processed", loss_target)
 
         loss += loss_target
         loss_value = loss.item()
@@ -182,6 +179,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             print("Loss is {}, stopping training".format(loss_value))
             sys.exit(1)
         
+        print("Engine 1", "Post process begin")
         if loss_scaler is None:
             loss /= update_freq
             model.backward(loss)
@@ -248,7 +246,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             log_writer.update(grad_norm=grad_norm, head="opt")
 
             log_writer.set_step()
-
+        print("Engine 1", "Post process end")
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print("Averaged stats:", metric_logger)
