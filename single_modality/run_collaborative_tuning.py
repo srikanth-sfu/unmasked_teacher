@@ -553,6 +553,7 @@ def main(args, ds_init):
             
         if log_writer is not None:
             log_writer.set_step(epoch * num_training_steps_per_epoch * args.update_freq)
+        validation_one_epoch(data_loader_val_src, model, device)
         validation_one_epoch(data_loader_val_tgt, model, device)
         os._exit(1)
         train_stats = train_one_epoch(
