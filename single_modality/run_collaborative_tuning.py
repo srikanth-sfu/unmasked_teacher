@@ -357,8 +357,6 @@ def main(args, ds_init):
         persistent_workers=True
     )
 
-    print("LINE 360", len(data_loader_train_src))
-    print("LINE 360", len(data_loader_train_tgt))
     data_loader_train = utils.balanced_batch_generator(data_loader_train_src, data_loader_train_tgt)
 
     if dataset_val_src is not None:
