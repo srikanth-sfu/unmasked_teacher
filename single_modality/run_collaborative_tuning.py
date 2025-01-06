@@ -548,7 +548,9 @@ def main(args, ds_init):
     max_accuracy_src = 0.0
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
-            data_loader_train.sampler.set_epoch(epoch)
+            data_loader_train_src.sampler.set_epoch(epoch)
+            data_loader_train_tgt.sampler.set_epoch(epoch)
+            
         if log_writer is not None:
             log_writer.set_step(epoch * num_training_steps_per_epoch * args.update_freq)
         train_stats_src, train_stats_tgt = train_one_epoch(
