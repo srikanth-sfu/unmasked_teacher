@@ -63,7 +63,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     start_steps=None, lr_schedule_values=None, wd_schedule_values=None,
                     num_training_steps_per_epoch=None, update_freq=None,
                     teacher_model=None, clip_input_resolution=224, criterion_target=None,
-                    clip_loss_ratio=0.5, mask_ratio=0., clip_label_embedding=None):
+                    clip_loss_ratio=0.5, mask_ratio=0., clip_label_embedding=None, len_iterable=None):
     model.train(True)
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -77,7 +77,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     else:
         optimizer.zero_grad()
 
-    for data_iter_step, (samples, targets, _, _, ds_id) in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
+    for data_iter_step, (samples, targets, _, _, ds_id) in enumerate(metric_logger.log_every(data_loader, print_freq, header, len_iterable)):
         print("Engine", samples.shape, ds_id)
         samples_tgt = samples[ds_id==1]
         samples, targets = samples[ds_id==0], targets[ds_id==0]
