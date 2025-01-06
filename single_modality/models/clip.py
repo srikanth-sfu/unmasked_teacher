@@ -135,14 +135,11 @@ class VisionTransformer(nn.Module):
     def forward(self, x, mask=None):
         x = self.conv1(x)  # shape = [*, width, grid, grid]
         N, C, T, H, W = x.shape
-        print('CLIP 1', x.shape)
         x = x.permute(0, 2, 3, 4, 1).reshape(N * T, H * W, C)
 
         x = torch.cat([self.class_embedding.to(x.dtype) + torch.zeros(x.shape[0], 1, x.shape[-1], dtype=x.dtype, device=x.device), x], dim=1)  # shape = [*, grid ** 2 + 1, width]
         x = x + self.positional_embedding.to(x.dtype)
-        print('CLIP 2', x.shape, self.ln_pre)
         x = self.ln_pre(x)
-        print('CLIP 3', x.shape)
         if mask is not None:
             cls_tokens = x[:, :1, :]
             x = x[:, 1:]
@@ -157,6 +154,7 @@ class VisionTransformer(nn.Module):
         x, attn = self.transformer(x)
 
         K = x.shape[0]
+        print("CLIP 4", x.shape)
         x = self.ln_post(x[:, 1:, :, :])  # [HW, NT, C]
         x = x.view(K, HW, N, T, C).permute(0, 2, 3, 1, 4).reshape(K, N, T * HW, C)  # [K, N, THW, C]
         x = x @ self.proj
@@ -167,7 +165,7 @@ class VisionTransformer(nn.Module):
             pass
         else:
             raise NotImplementedError
-
+        print("CLIP 5", x.shape)
         if self.return_attn:
             return x, attn[:, 0, 1:]
         else:
