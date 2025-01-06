@@ -204,9 +204,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 if model_ema is not None:
                     model_ema.update(model)
             loss_scale_value = loss_scaler.state_dict()["scale"]
-
         torch.cuda.synchronize()
-
+        print("Engine 1", "Post process midway")
+        
         if mixup_fn is None:
             class_acc = (output.max(-1)[-1] == targets).float().mean()
             class_acc_target = ((outputs_clip.max(-1)[-1] == target_labels)*target_mask).float().mean()
