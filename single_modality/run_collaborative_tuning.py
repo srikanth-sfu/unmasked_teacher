@@ -310,7 +310,7 @@ def main(args, ds_init):
         dataset_train_tgt, num_replicas=num_tasks, rank=global_rank, shuffle=True
     )
     
-    print("Sampler_train = %s" % str(sampler_train))
+    print("Sampler_train = %s" % str(sampler_train_src))
     
     if args.dist_eval:
         if len(dataset_val_src) % num_tasks != 0:
@@ -443,7 +443,7 @@ def main(args, ds_init):
     print('number of params:', n_parameters)
 
     total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
-    num_training_steps_per_epoch = len(dataset_train) // total_batch_size
+    num_training_steps_per_epoch = max(len(dataset_train_src), len(dataset_train_tgt)) // total_batch_size
     if args.iterations > 0:
         args.epochs = args.iterations // num_training_steps_per_epoch
         args.epochs += 1
