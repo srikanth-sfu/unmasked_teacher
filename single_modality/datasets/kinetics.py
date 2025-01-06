@@ -245,7 +245,6 @@ class VideoClsDataset(Dataset):
         """Load video content using Decord"""
         if not sample.endswith(self.video_ext):
             sample += self.video_ext
-        print(self.video_ext)
         fname = sample
         fname = os.path.join(self.prefix, fname)
         try:
