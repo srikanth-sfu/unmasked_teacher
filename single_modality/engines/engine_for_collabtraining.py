@@ -79,6 +79,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     clip_label_embedding = torch.from_numpy(clip_label_embedding).to(device, non_blocking=True)
 
     for data_iter_step, (samples, targets, _, _, ds_id) in enumerate(metric_logger.log_every(data_loader, print_freq, header, len_iterable)):
+        if data_iter_step == len_iterable:
+            break
         samples_tgt = samples[ds_id==1]
         samples, targets = samples[ds_id==0], targets[ds_id==0]
         step = data_iter_step // update_freq
