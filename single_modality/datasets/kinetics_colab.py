@@ -133,12 +133,8 @@ class VideoClsColabDataset(Dataset):
                     clip_frames_all.append(new_frames_clip)
                 return frame_list, clip_frames_all, label_list, index_list, {}, self.ds_id
             else:
-                buffer = self._aug_frame(buffer, args)
-                clip_frames = []
-                for i in range(buffer.shape[0]):
-                    pil_image = Image.fromarray(buffer[i])
-                    clip_frames.append(self.clip_preprocess(pil_image))
-            clip_frames = np.stack(clip_frames)
+                buffer, clip_frames = self._aug_frame(buffer, args)
+                clip_frames = np.stack(clip_frames)
 
             return buffer, clip_frames, self.label_array[index], index, {}, self.ds_id
 
