@@ -134,7 +134,7 @@ class VideoClsColabDataset(Dataset):
                 return frame_list, clip_frames_all, label_list, index_list, {}, self.ds_id
             else:
                 buffer, clip_frames = self._aug_frame(buffer, args)
-                clip_frames = np.stack(clip_frames)
+                clip_frames = torch.from_numpy(np.stack(clip_frames)).permute(1,0,2,3)
 
             return buffer, clip_frames, self.label_array[index], index, {}, self.ds_id
 
