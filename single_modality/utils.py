@@ -32,13 +32,14 @@ def balanced_batch_generator(loader1, loader2):
         except:
             iter2 = iter(loader2)
             batch2 = next(iter2)
-        samples1, targets1, _, _, ds_id1 = batch1
-        samples2, targets2, _, _, ds_id2 = batch2
+        samples1, samples1_clip, targets1, _, _, ds_id1 = batch1
+        samples2, samples2_clip, targets2, _, _, ds_id2 = batch2
         
+        samples_clip = torch.cat([samples1_clip, samples2_clip], dim=0)
         samples = torch.cat([samples1, samples2], dim=0)
         targets = torch.cat([targets1, targets2], dim=0)
         ds_id = torch.cat([ds_id1, ds_id2], dim=0)
-        yield samples, targets, None, None, ds_id
+        yield samples, samples_clip, targets, None, None, ds_id
 class LabelSmoothingCrossEntropyNoReduction(nn.Module):
     """ NLL loss with label smoothing.
     """
