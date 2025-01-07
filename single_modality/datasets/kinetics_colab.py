@@ -8,6 +8,7 @@ from torchvision import transforms
 import warnings
 from decord import VideoReader, cpu
 from torch.utils.data import Dataset
+from PIL import Image
 from .random_erasing import RandomErasing
 from .video_transforms import (
     Compose, Resize, CenterCrop, Normalize,
@@ -15,6 +16,7 @@ from .video_transforms import (
     random_crop, random_resized_crop_with_shift, random_resized_crop,
     horizontal_flip, random_short_side_scale_jitter, uniform_crop, 
 )
+import clip
 from .volume_transforms import ClipToTensor
 from PIL import Image
 
@@ -52,6 +54,8 @@ class VideoClsColabDataset(Dataset):
         self.video_ext = video_ext
         self.aug = False
         self.rand_erase = False
+        model, preprocess = clip.load("ViT-B/16", device='cpu')
+        self.clip_preprocess = preprocess
         assert num_segment == 1
         if self.mode in ['train']:
             self.aug = True
@@ -119,17 +123,24 @@ class VideoClsColabDataset(Dataset):
                 frame_list = []
                 label_list = []
                 index_list = []
+                clip_frames_all = []
                 for _ in range(args.num_sample):
-                    new_frames = self._aug_frame(buffer, args)
+                    new_frames, new_frames_clip = self._aug_frame(buffer, args)
                     label = self.label_array[index]
                     frame_list.append(new_frames)
                     label_list.append(label)
                     index_list.append(index)
-                return frame_list, label_list, index_list, {}, self.ds_id
+                    clip_frames_all.append(new_frames_clip)
+                return frame_list, clip_frames_all, label_list, index_list, {}, self.ds_id
             else:
                 buffer = self._aug_frame(buffer, args)
-            
-            return buffer, self.label_array[index], index, {}, self.ds_id
+                clip_frames = []
+                for i in range(buffer.shape[0]):
+                    pil_image = Image.fromarray(buffer[i])
+                    clip_frames.append(self.clip_preprocess(pil_image))
+            clip_frames = np.stack(clip_frames)
+
+            return buffer, clip_frames, self.label_array[index], index, {}, self.ds_id
 
         elif self.mode == 'validation':
             args = self.args
@@ -195,7 +206,7 @@ class VideoClsColabDataset(Dataset):
         buffer = [
             transforms.ToPILImage()(frame) for frame in buffer
         ]
-
+        buffer_clip = [self.clip_preprocess(frame) for frame in buffer]
         buffer = aug_transform(buffer)
 
         buffer = [transforms.ToTensor()(img) for img in buffer]
@@ -239,7 +250,7 @@ class VideoClsColabDataset(Dataset):
             buffer = erase_transform(buffer)
             buffer = buffer.permute(1, 0, 2, 3)
 
-        return buffer
+        return buffer, buffer_clip
 
 
     def loadvideo_decord(self, sample, sample_rate_scale=1, chunk_nb=0):
