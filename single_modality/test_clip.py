@@ -52,6 +52,7 @@ def classify(vid, label_texts):
         text_features = model.encode_text(text)
         frame_probs = []
         for image in vid:
+            print(image.shape)
             image_features = model.encode_image(image)
             logits_per_image, _ = model(image, text)
             probs = logits_per_image.softmax(dim=-1).cpu().numpy()
