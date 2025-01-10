@@ -15,7 +15,6 @@ def loadvideo_decord(sample, prefix=None, video_ext='.avi', sample_rate_scale=1,
 
     vr = VideoReader(fname, width=224, height=224,
                     num_threads=1, ctx=cpu(0))
-    print(vr)
 
     # handle temporal segments
     clip_len, frame_sample_rate, num_segment, mode = 16, 4, 1, "validation" 
