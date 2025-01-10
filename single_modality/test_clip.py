@@ -46,6 +46,7 @@ def loadvideo_decord(sample, prefix=None, video_ext='.avi', sample_rate_scale=1,
 
 def classify(vid, label_texts):
     model, preprocess = clip.load("ViT-B/16", device="cuda")
+    print(vid.shape)
     vid = [preprocess(Image.fromarray(vid[x])) for x in range(vid.shape[0])]
     text = clip.tokenize(label_texts).to("cuda")
     with torch.no_grad():
