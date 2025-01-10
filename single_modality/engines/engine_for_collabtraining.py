@@ -136,7 +136,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 src_output = model(samples_tgt)
                 src_encoder_labels_conf = nn.functional.softmax(src_output,dim=-1)
                 src_encoder_labels_conf, src_encoder_labels = src_encoder_labels_conf.max(-1)
-                print(targets_tgt.numpy().tolist(), src_encoder_labels.cpu().numpy().tolist(), clip_labels.cpu().numpy().tolist())
+                print(targets_tgt.numpy().tolist(), src_encoder_labels.cpu().numpy().tolist(), clip_labels.cpu().numpy().tolist(), \
+                       clip_label_conf.cpu().numpy().astype('float16').tolist(), src_encoder_labels_conf.cpu().numpy().astype('float16').tolist())
                 target_labels, target_mask, target_conf = combine_labels(clip_labels, clip_label_conf, src_encoder_labels, src_encoder_labels_conf, threshold=0.1)
         
             BT, N = attn.shape
