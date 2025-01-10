@@ -54,16 +54,25 @@ def classify(vid, label_texts):
     with torch.no_grad():
         text_features = model.encode_text(text)
         frame_probs = []
+        frame_probs1 = []
         for image in vid:
             image_features = model.encode_image(image.unsqueeze(0))
-            logits_per_image, _ = model(image.unsqueeze(0), text)
+            text_features = text_features/text_features.norm(dim=1, keepdim=True)
+            image_features = image_features/image_features.norm(dim=1, keepdim=True)
+            logits_per_image = 100. * image_features @ text_features.t()
+            logits_per_image1, _ = model(image.unsqueeze(0), text)
             probs = logits_per_image.softmax(dim=-1).cpu().numpy()
-            frame_probs.append(probs)
+            probs1 = logits_per_image1.softmax(dim=-1).cpu().numpy()
+            frame_probs.append(probs.squeeze(0))
+            frame_probs1.append(probs1.squeeze(0))
     frame_probs = np.stack(frame_probs)
-    print(frame_probs.shape)
-    frame_probs = frame_probs.mean(dim=0)
+    frame_probs = frame_probs.mean(axis=0)
+        
+    frame_probs1 = np.stack(frame_probs1).mean(axis=0)
+
     pred, pred_conf = frame_probs.argmax(), frame_probs.max()
-    return pred, pred_conf
+    pred1, pred1_conf = frame_probs1.argmax(), frame_probs1.max()
+    return pred, pred_conf, pred1, pred1_conf
 
 if __name__ == "__main__":
     import random
@@ -78,5 +87,5 @@ if __name__ == "__main__":
     for file_id in files_to_sample:
         fn, label = val_files[file_id], val_labels[file_id]
         vid = loadvideo_decord(fn, prefix=prefix)
-        pred, pred_conf = classify(vid, label_texts)
-        print(label, pred, pred_conf)
+        pred, pred_conf, pred1, pred1_conf = classify(vid, label_texts)
+        print(label, pred, pred_conf, pred1, pred1_conf)
