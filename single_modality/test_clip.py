@@ -49,7 +49,9 @@ def classify(vid, label_texts):
     vid = [preprocess(Image.fromarray(vid[x])) for x in range(vid.shape[0])]
     text = clip.tokenize(label_texts).to("cuda")
     with torch.no_grad():
+        print(text)
         text_features = model.encode_text(text)
+        print(text_features.shape)
         frame_probs = []
         for image in vid:
             print(image.shape)
