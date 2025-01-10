@@ -139,7 +139,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 print(targets_tgt.numpy().tolist(), src_encoder_labels.cpu().numpy().tolist(), clip_labels.cpu().numpy().tolist(), \
                        clip_label_conf.cpu().numpy().astype('float16').tolist(), src_encoder_labels_conf.cpu().numpy().astype('float16').tolist())
                 target_labels, target_mask, target_conf = combine_labels(clip_labels, clip_label_conf, src_encoder_labels, src_encoder_labels_conf, threshold=0.1)
-        
+            continue
             BT, N = attn.shape
             N_vis = N - int(N * mask_ratio)
             importance = torch.multinomial(attn, N)
