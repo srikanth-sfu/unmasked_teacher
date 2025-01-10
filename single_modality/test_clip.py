@@ -55,7 +55,8 @@ if __name__ == "__main__":
     val_files, val_labels = list(val_files[val_files.columns[0]]), list(val_files[val_files.columns[1]])
 
     files_to_sample = [random.randint(0, len(val_files)) for _ in range(10)]
-    val_files, val_labels = val_files[files_to_sample], val_labels[files_to_sample]
     prefix = os.path.join(os.getenv("SLURM_TMPDIR"), "/data/ucf_hmdb/")
-    for filename in val_files:
-        vid = loadvideo_decord(filename, prefix=prefix)
+    for file_id in files_to_sample:
+        fn, label = val_files[file_id], val_labels[file_id]
+        vid = loadvideo_decord(fn, prefix=prefix)
+        print(vid.shape)
