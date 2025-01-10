@@ -1,10 +1,12 @@
 import os
-from decord import VideoReader, cpu
-import numpy as np
 import clip
+import decord
+import numpy as np
 import pandas as pd
 from PIL import Image
 import torch
+
+model, preprocess = clip.load("ViT-B/16", device="cuda")
 
 def loadvideo_decord(sample, prefix=None, video_ext='.avi', sample_rate_scale=1, chunk_nb=0):
     """Load video content using Decord"""
@@ -13,8 +15,8 @@ def loadvideo_decord(sample, prefix=None, video_ext='.avi', sample_rate_scale=1,
     fname = sample
     fname = os.path.join(prefix, fname)
 
-    vr = VideoReader(fname, width=224, height=224,
-                    num_threads=1, ctx=cpu(0))
+    vr = decord.VideoReader(fname, width=224, height=224,
+                    num_threads=1, ctx=decord.cpu(0))
 
     # handle temporal segments
     clip_len, frame_sample_rate, num_segment, mode = 16, 4, 1, "validation" 
@@ -23,6 +25,7 @@ def loadvideo_decord(sample, prefix=None, video_ext='.avi', sample_rate_scale=1,
 
 
     all_index = []
+    
     for i in range(num_segment):
         if seg_len <= converted_len:
             index = np.linspace(0, seg_len, num=seg_len // frame_sample_rate)
@@ -45,19 +48,15 @@ def loadvideo_decord(sample, prefix=None, video_ext='.avi', sample_rate_scale=1,
     return buffer
 
 def classify(vid, label_texts):
-    model, preprocess = clip.load("ViT-B/16", device="cuda")
-    print(vid.shape)
-    vid = [preprocess(Image.fromarray(vid[x])) for x in range(vid.shape[0])]
+    
+    vid = [preprocess(Image.fromarray(vid[x])).to("cuda") for x in range(vid.shape[0])]
     text = clip.tokenize(label_texts).to("cuda")
     with torch.no_grad():
-        print(text)
         text_features = model.encode_text(text)
-        print(text_features.shape)
         frame_probs = []
         for image in vid:
-            print(image.shape)
-            image_features = model.encode_image(image)
-            logits_per_image, _ = model(image, text)
+            image_features = model.encode_image(image.unsqueeze(0))
+            logits_per_image, _ = model(image.unsqueeze(0), text)
             probs = logits_per_image.softmax(dim=-1).cpu().numpy()
             frame_probs.append(probs)
     frame_probs = np.stack(frame_probs)
