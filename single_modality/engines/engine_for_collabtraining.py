@@ -82,7 +82,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         if data_iter_step == len_iterable:
             break
         targets_tgt = targets[ds_id==1]
-        samples_tgt = samples[ds_id==1]
+        samples_tgt = samples_clip[ds_id==1]
         samples, targets = samples[ds_id==0], targets[ds_id==0]
         step = data_iter_step // update_freq
         if step >= num_training_steps_per_epoch:
