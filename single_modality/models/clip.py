@@ -154,8 +154,11 @@ class VisionTransformer(nn.Module):
         x, attn = self.transformer(x)
 
         K = x.shape[0]
-        x = self.ln_post(x[:, 1:, :, :])  # [HW, NT, C]
-        x = x.view(K, HW, N, T, C).permute(0, 2, 3, 1, 4).reshape(K, N, T * HW, C)  # [K, N, THW, C]
+        #x = self.ln_post(x[:, 1:, :, :])  # [HW, NT, C]
+        #x = x.view(K, HW, N, T, C).permute(0, 2, 3, 1, 4).reshape(K, N, T * HW, C)  # [K, N, THW, C]
+        #x = x @ self.proj
+        
+        x = self.ln_post(x[:, 0, :, :])
         x = x @ self.proj
 
         if self.clip_norm_type == 'l2':
