@@ -1,6 +1,7 @@
 import os
 import clip
 model, preprocess = clip.load("ViT-B/16", device="cuda")
+tokenize = clip.tokenize
 import decord
 import numpy as np
 import pandas as pd
@@ -60,7 +61,7 @@ def loadvideo_decord(sample, prefix=None, video_ext='.avi', sample_rate_scale=1,
 def classify(vid, label_texts):
     
     vid = [preprocess(Image.fromarray(vid[x])).to("cuda") for x in range(vid.shape[0])]
-    text = clip.tokenize(label_texts).to("cuda")
+    text = tokenize(label_texts).to("cuda")
     with torch.no_grad():
         text_features = model.encode_text(text)
         frame_probs = []
