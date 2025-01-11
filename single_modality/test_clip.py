@@ -5,6 +5,17 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 import torch
+from models import *
+
+
+clip_teacher = "clip_b16"
+teacher_model = eval(clip_teacher)(
+        clip_norm_type="l2",
+        input_resolution=224,
+        return_attn=True,
+        clip_return_layer=1,
+        clip_return_interval=1
+    )
 
 model, preprocess = clip.load("ViT-B/16", device="cuda")
 
@@ -55,10 +66,15 @@ def classify(vid, label_texts):
         text_features = model.encode_text(text)
         frame_probs = []
         frame_probs1 = []
-        for image in vid:
-            image_features = model.encode_image(image.unsqueeze(0))
+        #for image in vid:
+            #image_features = model.encode_image(image.unsqueeze(0))
+        if(True):
+            image_features, _ = clip_teacher(vid)
+            print(image_features.shape)
+            os._exit(1)
             text_features = text_features/text_features.norm(dim=1, keepdim=True)
             image_features = image_features/image_features.norm(dim=1, keepdim=True)
+            
             logits_per_image = 100. * image_features @ text_features.t()
             logits_per_image1, _ = model(image.unsqueeze(0), text)
             probs = logits_per_image.softmax(dim=-1).cpu().numpy()
