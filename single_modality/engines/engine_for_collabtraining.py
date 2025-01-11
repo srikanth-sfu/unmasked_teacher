@@ -137,8 +137,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 src_output = model(samples_tgt)
                 src_encoder_labels_conf = nn.functional.softmax(src_output,dim=-1)
                 src_encoder_labels_conf, src_encoder_labels = src_encoder_labels_conf.max(-1)
-                print(targets_tgt.numpy().tolist(), src_encoder_labels.cpu().numpy().tolist(), clip_labels.cpu().numpy().tolist(), \
-                       clip_label_conf.cpu().numpy().astype('float16').tolist(), src_encoder_labels_conf.cpu().numpy().astype('float16').tolist())
                 target_labels, target_mask, target_conf = combine_labels(clip_labels, clip_label_conf, src_encoder_labels, src_encoder_labels_conf, threshold=0.1)
             BT, N = attn.shape
             N_vis = N - int(N * mask_ratio)
@@ -148,7 +146,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             pos2 = importance[:, :N_vis]
             bool_masked_pos[pos1, pos2] = 0
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
-        continue
         with torch.cuda.amp.autocast():
             x = model.patch_embed(clip_videos)
             B, _, _ = x.size()
