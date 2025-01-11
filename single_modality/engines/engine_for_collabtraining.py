@@ -53,7 +53,7 @@ def combine_labels(label1, conf1, label2, conf2, threshold):
     label2_high_mask = (conf2 > threshold) & (conf1 <= threshold)
     combined_labels[label2_high_mask] = label2[label2_high_mask]
 
-    return combined_labels, (combined_labels != -1).type(label1.dtype), conf2
+    return combined_labels, (combined_labels != -1).type(torch.bool), conf2
 
 def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -173,10 +173,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
             loss_target = criterion_target(outputs_clip[target_mask], target_labels[target_mask])
             loss_target = (loss_target * target_conf[target_mask]).mean()
+        
 
-        print(loss.item())
-        print(loss_target.item())
-        print(output, targets)
         loss += loss_target
         loss_value = loss.item()
         
