@@ -1,5 +1,6 @@
 import os
 import clip
+model, preprocess = clip.load("ViT-B/16", device="cuda")
 import decord
 import numpy as np
 import pandas as pd
@@ -16,8 +17,6 @@ teacher_model = eval(clip_teacher)(
         clip_return_layer=1,
         clip_return_interval=1
     )
-
-model, preprocess = clip.load("ViT-B/16", device="cuda")
 
 def loadvideo_decord(sample, prefix=None, video_ext='.avi', sample_rate_scale=1, chunk_nb=0):
     """Load video content using Decord"""
