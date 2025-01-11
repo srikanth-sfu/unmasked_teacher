@@ -171,8 +171,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             
             outputs_clip = model.head(model.fc_dropout(x))
 
-            loss_target = criterion_target(outputs_clip, target_labels)
-            loss_target = (loss_target * target_mask * target_conf).mean()
+            loss_target = criterion_target(outputs_clip[target_mask], target_labels[target_mask])
+            loss_target = (loss_target * target_conf).mean()
 
         loss += loss_target
         loss_value = loss.item()
