@@ -4,10 +4,17 @@ export OMP_NUM_THREADS=1
 JOB_NAME='baseline_b16_ucf_hmdb'
 OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/pretrain/$JOB_NAME"
 LOG_DIR="./logs/${JOB_NAME}"
-DATA_PATH='your_data_path/k710/train.csv'
+DATA_PATH='video_splits/hmdb51_train_hmdb_ucf.csv'
 
-python -u run_umt_pretraining.py \
+# srun -p $PARTITION \
+#         --job-name=${JOB_NAME} \
+#         --gres=gpu:${GPUS_PER_NODE} \
+#         --ntasks=${GPUS} \
+#         --ntasks-per-node=${GPUS_PER_NODE} \
+#         --cpus-per-task=${CPUS_PER_TASK} \
+python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py \
     --data_path ${DATA_PATH} \
+    --prefix ${SLURM_TMPDIR}/data/ucf_hmdb/ \
     --num_sample 1 \
     --split ',' \
     --flip True \
@@ -34,8 +41,12 @@ python -u run_umt_pretraining.py \
     --num_workers 12 \
     --opt adamw \
     --opt_betas 0.9 0.95 \
-    --warmup_epochs 40 \
+    --warmup_epochs 10 \
     --save_ckpt_freq 1000 \
-    --epochs 201 \
+    --epochs 50 \
+    --use_checkpoint \
+    --checkpoint_num 4 \
+    --pin_mem \
     --log_dir ${OUTPUT_DIR} \
-    --output_dir ${OUTPUT_DIR}
+    --output_dir ${OUTPUT_DIR} \
+    --video_ext avi
