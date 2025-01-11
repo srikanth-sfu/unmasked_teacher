@@ -17,7 +17,7 @@ teacher_model = eval(clip_teacher)(
         return_attn=True,
         clip_return_layer=1,
         clip_return_interval=1
-    )
+    ).to("cuda")
 
 def loadvideo_decord(sample, prefix=None, video_ext='.avi', sample_rate_scale=1, chunk_nb=0):
     """Load video content using Decord"""
