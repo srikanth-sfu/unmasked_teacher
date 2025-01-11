@@ -69,7 +69,7 @@ def classify(vid, label_texts):
         #for image in vid:
             #image_features = model.encode_image(image.unsqueeze(0))
         if(True):
-            vid = torch.stack(vid).transpose(0,1)
+            vid = torch.stack(vid).transpose(0,1).unsqueeze(0)
             image_features, _ = teacher_model(vid)
             print(image_features.shape)
             os._exit(1)
