@@ -131,7 +131,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             
             with torch.cuda.amp.autocast():
                 _, attn = teacher_model(clip_videos)
-                print(clip_videos.shape, clip_videos.permute(0,2,1,3,4).shape, C, clip_input_resolution)
                 norm_clip = model1.encode_image(clip_videos.permute(0,2,1,3,4).reshape(-1, C, clip_input_resolution, clip_input_resolution))
                 norm_clip = norm_clip/norm_clip.norm(dim=1, keepdim=True)
                 # norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)#.reshape(-1,norm_clip.shape[-1])
