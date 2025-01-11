@@ -84,7 +84,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         if data_iter_step == len_iterable:
             break
         targets_tgt = targets[ds_id==1]
-        samples_tgt = samples_clip[ds_id==1]
+        samples_tgt = samples[ds_id==1]
         samples, targets = samples[ds_id==0], targets[ds_id==0]
         step = data_iter_step // update_freq
         if step >= num_training_steps_per_epoch:
@@ -130,8 +130,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 clip_videos = samples_tgt
             
             with torch.cuda.amp.autocast():
-                _, attn = teacher_model(clip_videos)
-                norm_clip = model1.encode_image(clip_videos.permute(0,2,1,3,4).reshape(-1, C, clip_input_resolution, clip_input_resolution))
+                norm_clip, attn = teacher_model(clip_videos)
                 norm_clip = norm_clip/norm_clip.norm(dim=1, keepdim=True)
                 # norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)#.reshape(-1,norm_clip.shape[-1])
                 norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)
