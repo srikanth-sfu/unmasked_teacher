@@ -88,6 +88,7 @@ def classify(vid, label_texts):
     #frame_probs1 = np.stack(frame_probs1).mean(axis=0)
 
     pred, pred_conf = frame_probs.argmax(), frame_probs.max()
+    pred1, pred1_conf = pred, pred_conf
     #pred1, pred1_conf = frame_probs1.argmax(), frame_probs1.max()
     return pred, pred_conf, pred1, pred1_conf
 
