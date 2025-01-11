@@ -70,15 +70,15 @@ def classify(vid, label_texts):
             #image_features = model.encode_image(image.unsqueeze(0))
         if(True):
             vid = torch.stack(vid).transpose(0,1).unsqueeze(0)
-            image_features, _ = teacher_model(vid).reshape(16,-1,512).mean(dim=1)
+            image_features, _ = teacher_model(vid)
             text_features = text_features/text_features.norm(dim=1, keepdim=True)
-            image_features = image_features/image_features.norm(dim=1, keepdim=True) 
+            image_features = image_features.reshape(16,-1,512).mean(dim=1)/image_features.norm(dim=1, keepdim=True) 
             logits_per_image = 100. * image_features @ text_features.t()
             
             #logits_per_image1, _ = model(image.unsqueeze(0), text)
             frame_probs = logits_per_image.softmax(dim=-1).cpu().numpy()
             #probs1 = logits_per_image1.softmax(dim=-1).cpu().numpy()
-            frame_probs.append(probs.squeeze(0))
+            # frame_probs.append(probs.squeeze(0))
             #frame_probs1.append(probs1.squeeze(0))
     #frame_probs = np.stack(frame_probs)
     frame_probs = frame_probs.mean(axis=0)
