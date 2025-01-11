@@ -69,7 +69,7 @@ def classify(vid, label_texts):
         #for image in vid:
             #image_features = model.encode_image(image.unsqueeze(0))
         if(True):
-            image_features, _ = clip_teacher(vid)
+            image_features, _ = teacher_model(vid)
             print(image_features.shape)
             os._exit(1)
             text_features = text_features/text_features.norm(dim=1, keepdim=True)
