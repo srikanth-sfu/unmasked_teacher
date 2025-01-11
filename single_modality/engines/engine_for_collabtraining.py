@@ -11,7 +11,6 @@ import utils
 from scipy.special import softmax
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
-import clip
 
 def train_class_batch(model, samples, target, criterion):
     outputs = model(samples)
@@ -77,8 +76,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     else:
         optimizer.zero_grad()
     clip_label_embedding = torch.from_numpy(clip_label_embedding).to(device, non_blocking=True)
-    model1, _ = clip.load("ViT-B/16", device="cpu")
-    model1 = model1.to(device) 
 
     for data_iter_step, (samples, samples_clip, targets, _, _, ds_id) in enumerate(metric_logger.log_every(data_loader, print_freq, header, len_iterable)):
         if data_iter_step == len_iterable:
