@@ -72,7 +72,8 @@ def classify(vid, label_texts):
             vid = torch.stack(vid).transpose(0,1).unsqueeze(0)
             image_features, _ = teacher_model(vid)
             text_features = text_features/text_features.norm(dim=1, keepdim=True)
-            image_features = image_features.reshape(16,-1,512).mean(dim=1)/image_features.norm(dim=1, keepdim=True) 
+            image_features = image_features.reshape(16,-1,512).mean(dim=1)
+            image_features = image_features/image_features.norm(dim=1, keepdim=True) 
             logits_per_image = 100. * image_features @ text_features.t()
             
             #logits_per_image1, _ = model(image.unsqueeze(0), text)
