@@ -11,7 +11,7 @@ import utils
 from scipy.special import softmax
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
-
+import clip
 
 def train_class_batch(model, samples, target, criterion):
     outputs = model(samples)
@@ -77,6 +77,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     else:
         optimizer.zero_grad()
     clip_label_embedding = torch.from_numpy(clip_label_embedding).to(device, non_blocking=True)
+    model1, _ = clip.load("ViT-B/16", device="cpu")
+    model1 = model1.to(device) 
 
     for data_iter_step, (samples, samples_clip, targets, _, _, ds_id) in enumerate(metric_logger.log_every(data_loader, print_freq, header, len_iterable)):
         if data_iter_step == len_iterable:
@@ -128,8 +130,11 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 clip_videos = samples_tgt
             
             with torch.cuda.amp.autocast():
-                norm_clip, attn = teacher_model(clip_videos)
-                norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)#.reshape(-1,norm_clip.shape[-1])
+                _, attn = teacher_model(clip_videos)
+                norm_clip = model.encode_image(clip_videos.permute(0,2,1,3,4).view(-1, C, clip_input_resolution, clip_input_resolution))
+                norm_clip = norm_clip/norm_clip.norm(dim=1, keepdim=True)
+                # norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)#.reshape(-1,norm_clip.shape[-1])
+                norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)
                 clip_output = (norm_clip @ clip_label_embedding.T)#.reshape(B,-1).mean(dim=-1).squeeze(0)
                 clip_label_conf = nn.functional.softmax(100.*clip_output, dim=-1).mean(dim=1)
                 clip_label_conf, clip_labels = clip_label_conf.max(-1)
