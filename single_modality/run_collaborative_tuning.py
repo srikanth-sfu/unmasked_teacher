@@ -474,7 +474,7 @@ def main(args, ds_init):
     print('number of params:', n_parameters)
 
     total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
-    num_training_steps_per_epoch = max(len(dataset_train_src), len(dataset_train_tgt)) // total_batch_size
+    num_training_steps_per_epoch = len(dataset_train) // total_batch_size
     if args.iterations > 0:
         args.epochs = args.iterations // num_training_steps_per_epoch
         args.epochs += 1
@@ -594,8 +594,7 @@ def main(args, ds_init):
             teacher_model=teacher_model, clip_input_resolution=args.clip_input_resolution,
             clip_loss_ratio=args.clip_loss_ratio, mask_ratio=args.mask_ratio,
             clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target,
-            len_iterable=max(len(data_loader_train_src), len(data_loader_train_tgt)), 
-            tubelet_params=tubelet_transform, moco=moco
+            len_iterable=data_loader_train, tubelet_params=tubelet_transform, moco=moco
         )
         if args.output_dir and args.save_ckpt:
             if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:

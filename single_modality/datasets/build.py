@@ -294,7 +294,10 @@ def build_dataset(is_train, test_mode, args, ds=None):
     return dataset, nb_classes
 
 
-def build_dataset_colab(is_train, test_mode, args):
-    # ds = args.data_set if not target else args.data_set_target
-    # args.ds_id = 0 if not target else 1
-    return build_dataset(is_train, test_mode, args, args.data_set)
+def build_dataset_colab(is_train, test_mode, target=None, args=None):
+    if not is_train:
+        ds = args.data_set if not target else args.data_set_target
+        args.ds_id = 0 if not target else 1
+    else:
+        ds = args.data_set
+    return build_dataset(is_train, test_mode, args, ds)
