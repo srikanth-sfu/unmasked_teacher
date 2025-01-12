@@ -114,6 +114,7 @@ class VideoClsColabDataset(Dataset):
         random.shuffle(index_array)
         self.dataset_samples_target = [self.dataset_samples_target[x] for x in index_array]
         self.label_array_target = [self.label_array_target[x] for x in index_array]
+        print(self.dataset_samples_target[:10], self.label_array_target[:10])
 
     def __getitem__(self, index):
         if self.mode == 'train':
