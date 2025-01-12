@@ -77,12 +77,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         optimizer.zero_grad()
     clip_label_embedding = torch.from_numpy(clip_label_embedding).to(device, non_blocking=True)
 
-    for data_iter_step, (samples, samples_clip, targets, _, _, ds_id) in enumerate(metric_logger.log_every(data_loader, print_freq, header, len_iterable)):
+    for data_iter_step, (samples, samples_tgt, targets, _, _, targets_tgt) in enumerate(metric_logger.log_every(data_loader, print_freq, header, len_iterable)):
         if data_iter_step == len_iterable:
             break
-        targets_tgt = targets[ds_id==1]
-        samples_tgt = samples[ds_id==1]
-        samples, targets = samples[ds_id==0], targets[ds_id==0]
         
         feat_src_np, feat_tgt_np = samples.numpy(), samples_tgt.numpy()
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)

@@ -17,6 +17,7 @@ from .video_transforms import (
     horizontal_flip, random_short_side_scale_jitter, uniform_crop, 
 )
 from .volume_transforms import ClipToTensor
+import random
 
 try:
     from petrel_client.client import Client
@@ -33,6 +34,7 @@ class VideoClsColabDataset(Dataset):
                  num_segment=1, num_crop=1, test_num_segment=10, test_num_crop=3,
                  args=None, video_ext=".mp4"):
         self.anno_path = anno_path
+        self.anno_path_target = args.anno_path_target
         self.prefix = prefix
         self.split = split
         self.mode = mode
@@ -62,8 +64,15 @@ class VideoClsColabDataset(Dataset):
 
         import pandas as pd
         cleaned = pd.read_csv(self.anno_path, header=None, delimiter=self.split)
+        cleaned_target = pd.read_csv(self.anno_path_target, header=None, delimiter=self.split)
+        
         self.dataset_samples = list(cleaned.values[:, 0])
+        self.dataset_samples_target = list(cleaned_target.values[:, 0])
+        self.num_target = len(self.dataset_samples_target)
+
         self.label_array = list(cleaned.values[:, 1])
+        self.label_array_target = list(cleaned_target.values[:, 1])
+
 
         self.client = None
         if has_client:
@@ -99,6 +108,12 @@ class VideoClsColabDataset(Dataset):
                         self.test_label_array.append(sample_label)
                         self.test_dataset.append(self.dataset_samples[idx])
                         self.test_seg.append((ck, cp))
+    
+    def shuffle_target(self):
+        index_array = list(range(self.num_target))
+        random.shuffle(index_array)
+        self.dataset_samples_target = [self.dataset_samples_target[x] for x in index_array]
+        self.label_array_target = [self.label_array_target[x] for x in index_array]
 
     def __getitem__(self, index):
         if self.mode == 'train':
@@ -107,6 +122,16 @@ class VideoClsColabDataset(Dataset):
 
             sample = self.dataset_samples[index]
             buffer = self.loadvideo_decord(sample, sample_rate_scale=scale_t) # T H W C
+
+            if random.random() < 1/self.num_target:
+                self.shuffle_target()
+            index_target = random.randint(0, self.num_target, 1)[0]
+            
+            sample_target = self.dataset_samples_target[index_target]
+            label_target = self.label_array_target[index_target]
+
+            buffer_target = self.loadvideo_decord(sample_target, sample_rate_scale=scale_t) # T H W C
+
 
             if len(buffer) == 0:
                 while len(buffer) == 0:
@@ -126,11 +151,12 @@ class VideoClsColabDataset(Dataset):
                     frame_list.append(new_frames)
                     label_list.append(label)
                     index_list.append(index)
-                return frame_list, frame_list, label_list, index_list, {}, self.ds_id
+                return frame_list, frame_list, label_list, index_list, {}, label_target
             else:
                 buffer = self._aug_frame(buffer, args)
+                buffer_target = self._aug_frame(buffer, args)
 
-            return buffer, buffer, self.label_array[index], index, {}, self.ds_id
+            return buffer, buffer_target, self.label_array[index], index, {}, label_target
 
         elif self.mode == 'validation':
             args = self.args

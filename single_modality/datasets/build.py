@@ -86,6 +86,7 @@ def build_dataset(is_train, test_mode, args, ds=None):
         if is_train is True:
             mode = 'train'
             anno_path = os.path.join(args.data_path, 'ucf101_train_hmdb_ucf.csv')
+            args.anno_path_target = os.path.join(args.data_path, 'hmdb51_train_hmdb_ucf.csv')
             func = VideoClsColabDataset
         else:  
             mode = 'validation'
@@ -293,7 +294,7 @@ def build_dataset(is_train, test_mode, args, ds=None):
     return dataset, nb_classes
 
 
-def build_dataset_colab(is_train, test_mode, target, args):
-    ds = args.data_set if not target else args.data_set_target
-    args.ds_id = 0 if not target else 1
-    return build_dataset(is_train, test_mode, args, ds)
+def build_dataset_colab(is_train, test_mode, args):
+    # ds = args.data_set if not target else args.data_set_target
+    # args.ds_id = 0 if not target else 1
+    return build_dataset(is_train, test_mode, args, args.data_set)
