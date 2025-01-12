@@ -61,7 +61,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     model_ema: Optional[ModelEma] = None, mixup_fn: Optional[Mixup] = None, log_writer=None,
                     start_steps=None, lr_schedule_values=None, wd_schedule_values=None,
                     num_training_steps_per_epoch=None, update_freq=None,
-                    teacher_model=None, clip_input_resolution=224, criterion_target=None,
+                    teacher_model=None, clip_input_resolution=224, criterion_target=None, tubelet_params=None, moco=None,
                     clip_loss_ratio=0.5, mask_ratio=0., clip_label_embedding=None, len_iterable=None):
     model.train(True)
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -83,6 +83,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         targets_tgt = targets[ds_id==1]
         samples_tgt = samples[ds_id==1]
         samples, targets = samples[ds_id==0], targets[ds_id==0]
+        
+        feat_src_np, feat_tgt_np = samples.numpy(), samples_tgt.numpy()
+        src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
+        
         step = data_iter_step // update_freq
         if step >= num_training_steps_per_epoch:
             continue
@@ -97,7 +101,13 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
+
+
         samples_tgt = samples_tgt.to(device, non_blocking=True)
+
+        src_tubelet = src_tubelet.to(device, non_blocking=True)
+        tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
+
 
         if mixup_fn is not None:
             samples, targets = mixup_fn(samples, targets)
@@ -154,7 +164,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 x = x + model.pos_embed.expand(B, -1, -1).type_as(x).to(x.device).clone().detach()
             B, _, C = x.shape
             x = x[~bool_masked_pos].reshape(B, -1, C) # ~mask means visible
-        
+
             x = model.pos_drop(x)
 
             for idx, blk in enumerate(model.blocks):
@@ -170,14 +180,14 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 x = x[:, 0]
             
             outputs_clip = model.head(model.fc_dropout(x))
-
+            moco_loss = moco.forward(model, src)["nce_loss"].mean()        
             if target_mask.type(torch.int).sum() > 0: 
                 loss_target = criterion_target(outputs_clip[target_mask], target_labels[target_mask])
                 loss_target = (loss_target * target_conf[target_mask]).mean()
             else:
                 loss_target = torch.tensor(0.)
 
-        loss += loss_target
+        loss = loss+loss_target+moco_loss
         loss_value = loss.item()
         
         if not math.isfinite(loss_value):

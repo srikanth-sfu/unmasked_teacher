@@ -24,6 +24,8 @@ from utils import multiple_samples_collate
 from utils import LabelSmoothingCrossEntropyNoReduction
 from models import *
 import utils
+from tubelets import build_transform
+from moco import MoCo
 
 def get_args():
     parser = argparse.ArgumentParser('VideoMAE fine-tuning and evaluation script for video classification', add_help=False)
@@ -200,6 +202,7 @@ def get_args():
         'Kinetics', 'Kinetics_sparse', 
         'mitv1_sparse', 'ucf_hmdb', 'hmdb_ucf'
         ], type=str, help='dataset')
+    parser.add_argument("--tubelet-config", default="", type=str)
 
     parser.add_argument('--num_segments', type=int, default=1)
     parser.add_argument('--num_frames', type=int, default=16)
@@ -270,6 +273,48 @@ def main(args, ds_init):
         utils.create_ds_config(args)
 
     print(args)
+
+    tubelet_params = [
+                dict(
+                    type='GroupToTensor',
+                    switch_rgb_channels=False,
+                    div255=True,
+                    mean=None,
+                    std=None
+                )
+    ]
+    if not args.tubelet_config:
+        print("Using default tubelet setting")
+        tubelet_params1=[
+                dict(
+                    type='Tubelets',
+                    region_sampler=dict(
+                        scales=[32, 48, 56, 64, 96, 128],
+                        ratios=[0.5, 0.67, 0.75, 1.0, 1.33, 1.50, 2.0],
+                        scale_jitter=0.18,
+                        num_rois=2,
+                    ),
+                    key_frame_probs=[0.5, 0.3, 0.2],
+                    loc_velocity=5,
+                    rot_velocity=6,
+                    shear_velocity=0.066,
+                    size_velocity=0.0001,
+                    label_prob=1.0,
+                    motion_type='gaussian',
+                    patch_transformation='rotation',
+                )
+            ]
+    else:
+        with(open(args.tubelet_config, 'r')) as tconfig:
+            tubelet_params1 = [json.load(tconfig)]
+        if args.model_root.endswith("/"):
+            args.model_root = args.model_root[:-1]
+        args.model_root += ("_" + os.path.basename(args.tubelet_config.split(".")[0])) + '/'
+    
+    tubelet_params = tubelet_params1 + tubelet_params
+    print(json.dumps(tubelet_params, indent=4))
+    tubelet_transform = build_transform(tubelet_params)
+
 
     device = torch.device(args.device)
 
@@ -546,6 +591,7 @@ def main(args, ds_init):
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
     max_accuracy_src, max_accuracy_tgt = 0.0, 0.0
+    moco = MoCo(model, args.clip_decoder_embed_dim)
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             data_loader_train_src.sampler.set_epoch(epoch)
@@ -562,7 +608,8 @@ def main(args, ds_init):
             teacher_model=teacher_model, clip_input_resolution=args.clip_input_resolution,
             clip_loss_ratio=args.clip_loss_ratio, mask_ratio=args.mask_ratio,
             clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target,
-            len_iterable=max(len(data_loader_train_src), len(data_loader_train_tgt))
+            len_iterable=max(len(data_loader_train_src), len(data_loader_train_tgt)), 
+            tubelet_params=tubelet_transform, moco=moco
         )
         if args.output_dir and args.save_ckpt:
             if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:

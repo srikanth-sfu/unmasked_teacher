@@ -734,3 +734,40 @@ def multiple_pretrain_samples_collate(batch, fold=False):
         return [process_data], mask
     else:
         return process_data, mask
+
+def prepare_tubelet_inputs(vid):
+    #data2 = (((data1 + 1) * 255) / 2).astype('uint8')
+    return [(((np.squeeze(x, axis=0)+1)*255)/2).astype('uint8') for x in np.split(vid, vid.shape[0], axis=0)]
+
+def apply_transform(vid1, vid2, transform_fn):
+    vid1 = [np.squeeze(x, axis=1).transpose(1,2,0) for x in np.split(vid1, vid1.shape[1], axis=1)]
+    vid2 = [np.squeeze(x, axis=1).transpose(1,2,0) for x in np.split(vid2, vid2.shape[1], axis=1)]
+	
+    vid = vid1 + vid2
+    vid_tensor, trans_params = \
+            transform_fn.apply_image(vid, return_transform_param=True)
+    
+    clip_len = int(vid_tensor.size(0) / 2)
+    vid1 = vid_tensor[0:clip_len,:,:,:].permute(1, 0, 2, 3).contiguous()
+    vid2 = vid_tensor[clip_len:,:,:,:].permute(1, 0, 2, 3).contiguous()
+    
+    vid1.mul_(2).sub_(1)
+    vid2.mul_(2).sub_(1)
+
+    return vid1, vid2
+
+def transform_tubelet(vid1, vid2, fn):
+    orig_shape = vid1.shape
+    vid1, vid2 = prepare_tubelet_inputs(vid1), prepare_tubelet_inputs(vid2)
+    from multiprocessing import Pool
+    pool = Pool(8)
+    inputs = [(x,y,fn) for x,y in zip(vid1, vid2)]
+    vid_samples = pool.starmap(apply_transform, inputs)
+    out_vid1 = [x[0] for x in vid_samples]
+    out_vid2 = [x[1] for x in vid_samples]
+    out_vid1 = torch.stack(out_vid1)
+    out_vid1 = out_vid1.reshape(orig_shape)#[:,::2]
+    out_vid2 = torch.stack(out_vid2)
+    out_vid2 = out_vid2.reshape(orig_shape)#[:,::2]
+    return out_vid1, out_vid2
+
