@@ -8,8 +8,8 @@
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:v100l:4
 #SBATCH --time=0-03:00
-#SBATCH -o /home/smuralid/error/tubelets/umt/original_baseline/colabtrain/ucf_hmdb/slurm-%j.out  # Write the log on scratch
-#SBATCH -e /home/smuralid/error/tubelets/umt/original_baseline/colabtrain/ucf_hmdb/slurm-%j.err
+#SBATCH -o /home/smuralid/error/tubelets/umt_tubelet/colabtrainonly/ucf_hmdb/slurm-%j.out  # Write the log on scratch
+#SBATCH -e /home/smuralid/error/tubelets/umt_tubelet/colabtrainonly/ucf_hmdb/slurm-%j.err
 
 cd $SLURM_TMPDIR
 cp -r /project/def-mpederso/smuralid/envs/umt.zip . 
