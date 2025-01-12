@@ -334,8 +334,7 @@ def main(args, ds_init):
         clip_return_interval=args.clip_return_interval
     )
 
-    dataset_train_src, args.nb_classes = build_dataset_colab(is_train=True, test_mode=False, target=False, args=args)
-    dataset_train_tgt, args.nb_classes = build_dataset_colab(is_train=True, test_mode=False, target=True, args=args)
+    dataset_train, args.nb_classes = build_dataset_colab(is_train=True, test_mode=False, args=args)
     
     if args.disable_eval_during_finetuning:
         dataset_val = None
@@ -348,14 +347,12 @@ def main(args, ds_init):
     num_tasks = utils.get_world_size()
     global_rank = utils.get_rank()
     
-    sampler_train_src = torch.utils.data.DistributedSampler(
-        dataset_train_src, num_replicas=num_tasks, rank=global_rank, shuffle=True
-    )
-    sampler_train_tgt = torch.utils.data.DistributedSampler(
-        dataset_train_tgt, num_replicas=num_tasks, rank=global_rank, shuffle=True
+    
+    sampler_train = torch.utils.data.DistributedSampler(
+        dataset_train, num_replicas=num_tasks, rank=global_rank, shuffle=True
     )
     
-    print("Sampler_train = %s" % str(sampler_train_src))
+    print("Sampler_train = %s" % str(sampler_train))
     
     if args.dist_eval:
         if len(dataset_val_src) % num_tasks != 0:
@@ -383,8 +380,8 @@ def main(args, ds_init):
     else:
         collate_func = None
 
-    data_loader_train_src = torch.utils.data.DataLoader(
-        dataset_train_src, sampler=sampler_train_src,
+    data_loader_train = torch.utils.data.DataLoader(
+        dataset_train, sampler=sampler_train,
         batch_size=args.batch_size,
         num_workers=args.num_workers,
         pin_memory=args.pin_mem,
@@ -392,17 +389,6 @@ def main(args, ds_init):
         collate_fn=collate_func,
         persistent_workers=True
     )
-    data_loader_train_tgt = torch.utils.data.DataLoader(
-        dataset_train_tgt, sampler=sampler_train_tgt,
-        batch_size=args.batch_size,
-        num_workers=args.num_workers,
-        pin_memory=args.pin_mem,
-        drop_last=True,
-        collate_fn=collate_func,
-        persistent_workers=True
-    )
-
-    data_loader_train = utils.balanced_batch_generator(data_loader_train_src, data_loader_train_tgt)
 
     if dataset_val_src is not None:
         data_loader_val_src = torch.utils.data.DataLoader(
