@@ -448,6 +448,26 @@ def main(args, ds_init):
         use_mean_pooling=args.use_mean_pooling,
         init_scale=args.init_scale,
     )
+	
+	moco_model = create_model(
+        args.model,
+        pretrained=False,
+        num_classes=args.nb_classes,
+        all_frames=args.num_frames * args.num_segments,
+        tubelet_size=args.tubelet_size,
+        use_learnable_pos_emb=args.use_learnable_pos_emb,
+        fc_drop_rate=args.fc_drop_rate,
+        drop_rate=args.drop,
+        drop_path_rate=args.drop_path,
+        attn_drop_rate=args.attn_drop_rate,
+        drop_block_rate=None,
+        use_checkpoint=args.use_checkpoint,
+        checkpoint_num=args.checkpoint_num,
+        use_mean_pooling=args.use_mean_pooling,
+        init_scale=args.init_scale,
+    )
+    
+    moco = MoCo(moco_model, args.clip_decoder_embed_dim)	
 
     patch_size = model.patch_embed.patch_size
     print("Patch size = %s" % str(patch_size))
@@ -487,8 +507,7 @@ def main(args, ds_init):
     print("Batch size = %d" % total_batch_size)
     print("Repeated sample = %d" % args.num_sample)
     print("Update frequent = %d" % args.update_freq)
-    print("Number of source training examples = %d" % len(dataset_train_src))
-    print("Number of target training examples = %d" % len(dataset_train_tgt))
+    print("Number of source training examples = %d" % len(dataset_train))
     print("Number of training steps per epoch = %d" % num_training_steps_per_epoch)
 
     num_layers = model_without_ddp.get_num_layers()
@@ -577,7 +596,6 @@ def main(args, ds_init):
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
     max_accuracy_src, max_accuracy_tgt = 0.0, 0.0
-    moco = MoCo(model, args.clip_decoder_embed_dim)
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             data_loader_train_src.sampler.set_epoch(epoch)
