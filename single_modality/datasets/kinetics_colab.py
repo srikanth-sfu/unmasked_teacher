@@ -68,9 +68,10 @@ class VideoClsColabDataset(Dataset):
         self.dataset_samples = list(cleaned.values[:, 0])
         self.dataset_samples_target = list(cleaned_target.values[:, 0])
         self.num_target = len(self.dataset_samples_target)
-        self.shuffle_target()
         self.label_array = list(cleaned.values[:, 1])
         self.label_array_target = list(cleaned_target.values[:, 1])
+        self.shuffle_target()
+
 
 
         self.client = None
