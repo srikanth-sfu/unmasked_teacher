@@ -46,7 +46,6 @@ class VideoClsColabDataset(Dataset):
         self.new_width = new_width
         self.keep_aspect_ratio = keep_aspect_ratio
         self.num_segment = num_segment
-        self.ds_id = args.ds_id
         self.test_num_segment = test_num_segment
         self.num_crop = num_crop
         self.test_num_crop = test_num_crop
@@ -69,7 +68,7 @@ class VideoClsColabDataset(Dataset):
         self.dataset_samples = list(cleaned.values[:, 0])
         self.dataset_samples_target = list(cleaned_target.values[:, 0])
         self.num_target = len(self.dataset_samples_target)
-
+        self.shuffle_target()
         self.label_array = list(cleaned.values[:, 1])
         self.label_array_target = list(cleaned_target.values[:, 1])
 
