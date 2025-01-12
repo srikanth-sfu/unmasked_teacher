@@ -26,7 +26,7 @@ cd $SLURM_TMPDIR
 
 git clone git@github.com:srikanth-sfu/unmasked_teacher.git
 cd unmasked_teacher
-git checkout baseline_pretrain
+git checkout tubelet_umt
 cd single_modality
 
 
