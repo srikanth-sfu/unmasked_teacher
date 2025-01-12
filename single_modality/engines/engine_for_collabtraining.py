@@ -177,13 +177,13 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 x = x[:, 0]
             
             outputs_clip = model.head(model.fc_dropout(x))
-            moco_loss = moco.forward(model, src)["nce_loss"].mean()        
             if target_mask.type(torch.int).sum() > 0: 
                 loss_target = criterion_target(outputs_clip[target_mask], target_labels[target_mask])
                 loss_target = (loss_target * target_conf[target_mask]).mean()
             else:
                 loss_target = torch.tensor(0.)
 
+        moco_loss = moco.forward(model, src_tubelet, tgt_tubelet)["nce_loss"].mean()        
         loss = loss+loss_target+moco_loss
         loss_value = loss.item()
         

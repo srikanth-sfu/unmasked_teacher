@@ -175,40 +175,41 @@ class MoCo(nn.Module, TrainStepMixin):
 
 
     def forward(self, model, q, k_in, backbone):
+        
+        with(torch.cuda.amp.autocast()):
+            q = self.query_model_forward(model, q)
+            q = self.fc(q)
+            q = nn.functional.normalize(q, dim=1)
 
-        q = self.query_model_forward(model, q)
-        q = self.fc(q)
-        q = nn.functional.normalize(q, dim=1)
+            # # compute key features
+            with torch.no_grad():
+                self._momentum_update_key_encoder(backbone=backbone)
+                im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
+                tgt_tubelet = self.key_encoder_forward(im_k)
+                k = self.key_fc(tgt_tubelet)
+                k = nn.functional.normalize(k, dim=1)
+                k = self._batch_unshuffle_ddp(k, idx_unshuffle)
+                
 
-        # # compute key features
-        with torch.no_grad():
-            self._momentum_update_key_encoder(backbone=backbone)
-            im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
-            tgt_tubelet = self.key_encoder_forward(im_k)
-            k = self.key_fc(tgt_tubelet)
-            k = nn.functional.normalize(k, dim=1)
-            k = self._batch_unshuffle_ddp(k, idx_unshuffle)
-            
+            # compute logits
+            # Einstein sum is more intuitive
+            # positive logits: Nx1
+            l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(-1)
+            # negative logits: NxK
+            l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
 
-        # compute logits
-        # Einstein sum is more intuitive
-        # positive logits: Nx1
-        l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(-1)
-        # negative logits: NxK
-        l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
+            # logits: Nx(1+K)
+            logits = torch.cat([l_pos, l_neg], dim=1)
 
-        # logits: Nx(1+K)
-        logits = torch.cat([l_pos, l_neg], dim=1)
+            # apply temperature
+            logits /= self.T
 
-        # apply temperature
-        logits /= self.T
+            # labels: positive key indicators
+            labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
+            nce_loss = nn.functional.cross_entropy(logits, labels)
 
-        # labels: positive key indicators
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
-        nce_loss = nn.functional.cross_entropy(logits, labels)
-
-        # dequeue and enqueue
-        self._dequeue_and_enqueue(k)
+            # dequeue and enqueue
+            self._dequeue_and_enqueue(k)
 
         return dict(nce_loss=nce_loss)
 
