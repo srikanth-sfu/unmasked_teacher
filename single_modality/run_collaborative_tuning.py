@@ -449,7 +449,7 @@ def main(args, ds_init):
         init_scale=args.init_scale,
     )
 	
-	moco_model = create_model(
+    moco_model = create_model(
         args.model,
         pretrained=False,
         num_classes=args.nb_classes,
@@ -477,6 +477,7 @@ def main(args, ds_init):
 
     model.to(device)
     teacher_model.to(device)
+    moco.to(device)
 
     model_ema = None
     if args.model_ema:
@@ -488,6 +489,7 @@ def main(args, ds_init):
         print("Using EMA with decay = %.8f" % args.model_ema_decay)
 
     model_without_ddp = model
+    moco_model_without_ddp = moco
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     print("Model = %s" % str(model_without_ddp))
@@ -531,9 +533,12 @@ def main(args, ds_init):
         model, optimizer, _, _ = ds_init(
             args=args, model=model, model_parameters=optimizer_params, dist_init_required=not args.distributed,
         )
+        moco_model = ds_init(args=args, model=moco, optimizer=optimizer)[0]
 
         print("model.gradient_accumulation_steps() = %d" % model.gradient_accumulation_steps())
         assert model.gradient_accumulation_steps() == args.update_freq
+        print("Initialization complete")
+        os._exit(1)
     else:
         if args.distributed:
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
