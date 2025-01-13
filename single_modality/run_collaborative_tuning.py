@@ -528,9 +528,11 @@ def main(args, ds_init):
             model, args.weight_decay, skip_weight_decay_list,
             assigner.get_layer_id if assigner is not None else None,
             assigner.get_scale if assigner is not None else None)
-        model, optimizer, _, _ = ds_init(
+        model_engine, optimizer, _, _ = ds_init(
             args=args, model=model, model_parameters=optimizer_params, dist_init_required=not args.distributed,
         )
+        utils.load_model_colab(model_engine=model_engine, model=model, output_dir=args.finetune, model_name=args.finetune_tag)
+        model = model_engine
 
         print("model.gradient_accumulation_steps() = %d" % model.gradient_accumulation_steps())
         assert model.gradient_accumulation_steps() == args.update_freq
@@ -572,7 +574,6 @@ def main(args, ds_init):
 
     print("criterion = %s" % str(criterion))
 
-    utils.load_model_colab(model=model, output_dir=args.finetune, model_name=args.finetune_tag)
     utils.auto_load_model(
         args=args, model=model, model_without_ddp=model_without_ddp,
         optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)
