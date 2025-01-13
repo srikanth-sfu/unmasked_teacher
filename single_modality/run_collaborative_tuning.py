@@ -469,8 +469,6 @@ def main(args, ds_init):
     
     moco = MoCo(moco_model, args.clip_decoder_embed_dim)	
     model.add_module("moco", moco)
-    print(model.moco)
-    os._exit(1)
     patch_size = model.patch_embed.patch_size
     print("Patch size = %s" % str(patch_size))
     args.window_size = (args.num_frames // args.tubelet_size, args.input_size // patch_size[0], args.input_size // patch_size[1])
@@ -614,7 +612,7 @@ def main(args, ds_init):
             teacher_model=teacher_model, clip_input_resolution=args.clip_input_resolution,
             clip_loss_ratio=args.clip_loss_ratio, mask_ratio=args.mask_ratio,
             clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target,
-            len_iterable=data_loader_train, tubelet_params=tubelet_transform, moco=moco
+            len_iterable=data_loader_train, tubelet_params=tubelet_transform
         )
         if args.output_dir and args.save_ckpt:
             if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:
