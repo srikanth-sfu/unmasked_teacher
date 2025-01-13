@@ -33,10 +33,10 @@ def sample_key_frames(num_frames: int,
     # if there is no inner key frame, we will directly
     # sample the first frame and the last frame.
     if num_key_frames == 0:
-        return np.array([0, num_frames - 1], dtype=np.int)
+        return np.array([0, num_frames - 1], dtype=np.int32)
     avg_duration = num_frames / (num_key_frames + 1)
     ticks = np.array([int(avg_duration * i)
-                      for i in range(1, num_key_frames + 1)], dtype=np.int)
+                      for i in range(1, num_key_frames + 1)], dtype=np.int32)
 
     # add random jitter
     jitter_range = int(avg_duration / 3)
@@ -44,7 +44,7 @@ def sample_key_frames(num_frames: int,
         jitter = np.random.randint(-jitter_range,
                                    jitter_range, size=len(ticks))
     else:
-        jitter = np.zeros((len(ticks),), np.int)
+        jitter = np.zeros((len(ticks),), np.int32)
 
     ticks = ticks + jitter
     # add the first frame and last frame
