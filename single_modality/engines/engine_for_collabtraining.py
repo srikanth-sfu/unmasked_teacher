@@ -61,7 +61,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     model_ema: Optional[ModelEma] = None, mixup_fn: Optional[Mixup] = None, log_writer=None,
                     start_steps=None, lr_schedule_values=None, wd_schedule_values=None,
                     num_training_steps_per_epoch=None, update_freq=None,
-                    teacher_model=None, clip_input_resolution=224, criterion_target=None, tubelet_params=None, moco=None,
+                    teacher_model=None, clip_input_resolution=224, criterion_target=None, tubelet_params=None,
                     clip_loss_ratio=0.5, mask_ratio=0., clip_label_embedding=None, len_iterable=None):
     model.train(True)
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -183,7 +183,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             else:
                 loss_target = torch.tensor(0.)
 
-        moco_loss = moco.forward(model, src_tubelet, tgt_tubelet)["nce_loss"].mean()        
+        moco_loss = model.moco.forward(model, src_tubelet, tgt_tubelet)["nce_loss"].mean()        
         loss = loss+loss_target+moco_loss
         loss_value = loss.item()
         
