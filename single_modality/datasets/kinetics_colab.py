@@ -126,7 +126,7 @@ class VideoClsColabDataset(Dataset):
 
             if random.random() < 1/self.num_target:
                 self.shuffle_target()
-            index_target = random.randint(0, self.num_target-1)[0]
+            index_target = random.randint(0, self.num_target-1)
             
             sample_target = self.dataset_samples_target[index_target]
             label_target = self.label_array_target[index_target]
