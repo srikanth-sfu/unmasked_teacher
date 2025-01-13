@@ -156,7 +156,7 @@ class VideoClsColabDataset(Dataset):
                 return frame_list, frame_list, label_list, index_list, {}, label_target
             else:
                 buffer = self._aug_frame(buffer, args)
-                buffer_target = self._aug_frame(buffer, args)
+                buffer_target = self._aug_frame(buffer_target, args)
 
             return buffer, buffer_target, self.label_array[index], index, {}, label_target
 
