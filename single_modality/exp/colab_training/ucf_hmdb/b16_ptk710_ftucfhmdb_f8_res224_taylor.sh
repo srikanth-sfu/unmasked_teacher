@@ -3,7 +3,7 @@ export OMP_NUM_THREADS=1
 
 MODEL_PATH='/storage/smuralidharan/checkpoints/umt/src_finetune/baseline_b16_ucf_hmdb_f8_res224/'
 JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
-OUTPUT_DIR="/storage/smuralidharan/checkpoints/umt_tubelet/colabtrainonly/$JOB_NAME"
+OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt_tubelet/colabtrainonly/$JOB_NAME"
 PREFIX="/storage/smuralidharan/data/ucf_hmdb/"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/'
