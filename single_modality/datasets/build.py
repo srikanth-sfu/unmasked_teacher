@@ -87,6 +87,7 @@ def build_dataset(is_train, test_mode, args, ds=None):
             mode = 'train'
             anno_path = os.path.join(args.data_path, 'ucf101_train_hmdb_ucf.csv')
             args.anno_path_target = os.path.join(args.data_path, 'hmdb51_train_hmdb_ucf.csv')
+            args.video_ext_target = ".avi"
             func = VideoClsColabDataset
         else:  
             mode = 'validation'

@@ -51,6 +51,7 @@ class VideoClsColabDataset(Dataset):
         self.test_num_crop = test_num_crop
         self.args = args
         self.video_ext = video_ext
+        self.video_ext_target = args.video_ext_target
         self.aug = False
         self.rand_erase = False
         assert num_segment == 1
@@ -131,7 +132,7 @@ class VideoClsColabDataset(Dataset):
             sample_target = self.dataset_samples_target[index_target]
             label_target = self.label_array_target[index_target]
 
-            buffer_target = self.loadvideo_decord(sample_target, sample_rate_scale=scale_t) # T H W C
+            buffer_target = self.loadvideo_decord(sample_target, sample_rate_scale=scale_t, video_ext=self.video_ext_target) # T H W C
 
 
             if len(buffer) == 0:
@@ -269,10 +270,12 @@ class VideoClsColabDataset(Dataset):
         return buffer
 
 
-    def loadvideo_decord(self, sample, sample_rate_scale=1, chunk_nb=0):
+    def loadvideo_decord(self, sample, sample_rate_scale=1, chunk_nb=0, video_ext=None):
+        if video_ext is None:
+            video_ext = self.video_ext
         """Load video content using Decord"""
-        if not sample.endswith(self.video_ext):
-            sample += self.video_ext
+        if not sample.endswith(video_ext):
+            sample += video_ext
         fname = sample
         fname = os.path.join(self.prefix, fname)
 
