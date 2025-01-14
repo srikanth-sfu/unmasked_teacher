@@ -3,7 +3,7 @@ import os
 import torch
 from collections import OrderedDict
 
-path = '/project/def-mpederso/smuralid/checkpoints/umt/clip_visual_encoder'
+path = '/home/ens/smuralidharan/clip_checkpoints/umt/clip_visual_encoder'
 os.makedirs(path, exist_ok=True)
 model, _ = clip.load("ViT-B/16", device='cpu')
 new_state_dict = OrderedDict()
