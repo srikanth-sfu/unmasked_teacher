@@ -8,7 +8,7 @@ PREFIX="${SLURM_TMPDIR}/data/ucf_hmdb/"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/'
 
-python -m torch.distributed.launch --nproc_per_node 2 run_class_finetuning.py \
+python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --model vit_base_patch16_224 \
         --data_path ${DATA_PATH} \
         --prefix ${PREFIX} \
@@ -16,7 +16,7 @@ python -m torch.distributed.launch --nproc_per_node 2 run_class_finetuning.py \
         --finetune ${MODEL_PATH} \
         --log_dir ${OUTPUT_DIR} \
         --output_dir ${OUTPUT_DIR} \
-        --batch_size 14 \
+        --batch_size 7 \
         --num_sample 1 \
         --input_size 224 \
         --short_side_size 224 \
@@ -34,7 +34,6 @@ python -m torch.distributed.launch --nproc_per_node 2 run_class_finetuning.py \
         --test_num_segment 4 \
         --test_num_crop 3 \
         --dist_eval \
-        --enable_deepspeed \
         --test_best \
         --data_set ucf_hmdb \
         --video_ext .mp4 \
