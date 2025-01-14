@@ -44,7 +44,7 @@ def get_args():
                         help='temporal tube size for the patch embedding')
     parser.add_argument('--use_learnable_pos_emb', action='store_true')
     parser.set_defaults(use_learnable_pos_emb=False)
-    parser.add_argument('--k710_weights', default='/project/def-mpederso/smuralid/checkpoints/umt/b16_ptk710_f8_res224.pth', type=str)
+    parser.add_argument('--k710_weights', default='/home/ens/smuralidharan/checkpoints/umt/b16_ptk710_f8_res224.pth', type=str)
     parser.add_argument('--model_key', default='model|module', type=str)
     parser.add_argument('--model_prefix', default='', type=str)
 
@@ -154,7 +154,7 @@ def get_args():
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
-    parser.add_argument('--local_rank', default=-1, type=int)
+    parser.add_argument('--local-rank', default=-1, type=int)
     parser.add_argument('--dist_on_itp', action='store_true')
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
 
