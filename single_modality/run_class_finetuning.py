@@ -28,6 +28,7 @@ def get_args():
     parser = argparse.ArgumentParser('VideoMAE fine-tuning and evaluation script for video classification', add_help=False)
     parser.add_argument('--batch_size', default=64, type=int)
     parser.add_argument('--epochs', default=30, type=int)
+    parser.add_argument('--iterations', default=-1, type=int)
     parser.add_argument('--update_freq', default=1, type=int)
     parser.add_argument('--save_ckpt_freq', default=100, type=int)
 
@@ -53,6 +54,8 @@ def get_args():
     parser.add_argument('--model_ema', action='store_true', default=False)
     parser.add_argument('--model_ema_decay', type=float, default=0.9999, help='')
     parser.add_argument('--model_ema_force_cpu', action='store_true', default=False, help='')
+    parser.add_argument('--video_ext', default=".mp4", help='video ext')
+    
 
     # Optimizer parameters
     parser.add_argument('--opt', default='adamw', type=str, metavar='OPTIMIZER',
@@ -81,6 +84,8 @@ def get_args():
                         help='lower lr bound for cyclic schedulers that hit 0 (1e-6)')
 
     parser.add_argument('--warmup_epochs', type=int, default=5, metavar='N',
+                        help='epochs to warmup LR, if scheduler supports')
+    parser.add_argument('--warmup_iterations', type=int, default=-1, metavar='N',
                         help='epochs to warmup LR, if scheduler supports')
     parser.add_argument('--warmup_steps', type=int, default=-1, metavar='N',
                         help='num of steps to warmup LR, will overload warmup_epochs if set > 0')
@@ -153,14 +158,15 @@ def get_args():
     parser.add_argument('--imagenet_default_mean_and_std', default=True, action='store_true')
     parser.add_argument('--use_decord', default=True,
                         help='whether use decord to load video, otherwise load image')
-    parser.add_argument('--num_segments', type=int, default=1)
-    parser.add_argument('--num_frames', type=int, default=16)
-    parser.add_argument('--sampling_rate', type=int, default=4)
     parser.add_argument('--data_set', default='Kinetics', choices=[
         'Kinetics', 'Kinetics_sparse', 
         'SSV2', 'UCF101', 'HMDB51', 'image_folder',
-        'mitv1_sparse'
+        'mitv1_sparse', 'ucf_hmdb'
         ], type=str, help='dataset')
+    
+    parser.add_argument('--num_segments', type=int, default=1)
+    parser.add_argument('--num_frames', type=int, default=16)
+    parser.add_argument('--sampling_rate', type=int, default=4)
     parser.add_argument('--output_dir', default='',
                         help='path where to save, empty for no saving')
     parser.add_argument('--log_dir', default=None,
@@ -195,7 +201,7 @@ def get_args():
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
-    parser.add_argument('--local_rank', default=-1, type=int)
+    parser.add_argument('--local-rank', default=-1, type=int)
     parser.add_argument('--dist_on_itp', action='store_true')
     parser.add_argument('--dist_url', default='env://',
                         help='url used to set up distributed training')
@@ -220,7 +226,8 @@ def get_args():
 
 
 def main(args, ds_init):
-    utils.init_distributed_mode(args)
+    
+    utils.init_distributed_mode_new(args)
 
     if ds_init is not None:
         utils.create_ds_config(args)
@@ -242,8 +249,8 @@ def main(args, ds_init):
         dataset_val = None
     else:
         dataset_val, _ = build_dataset(is_train=False, test_mode=False, args=args)
-    dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
-    
+    #dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
+    dataset_test = None
 
     num_tasks = utils.get_world_size()
     global_rank = utils.get_rank()
@@ -258,8 +265,8 @@ def main(args, ds_init):
                     'equal num of samples per-process.')
         sampler_val = torch.utils.data.DistributedSampler(
             dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
-        sampler_test = torch.utils.data.DistributedSampler(
-            dataset_test, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+        # sampler_test = torch.utils.data.DistributedSampler(
+        #     dataset_test, num_replicas=num_tasks, rank=global_rank, shuffle=False)
     else:
         sampler_val = torch.utils.data.SequentialSampler(dataset_val)
 
@@ -449,6 +456,11 @@ def main(args, ds_init):
 
     total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
     num_training_steps_per_epoch = len(dataset_train) // total_batch_size
+    if args.iterations > 0:
+        args.epochs = args.iterations // num_training_steps_per_epoch
+        args.epochs += 1
+        args.warmup_epochs = args.warmup_iterations // num_training_steps_per_epoch
+        args.warmup_epochs += 1
     args.lr = args.lr * total_batch_size * args.num_sample / 256
     args.min_lr = args.min_lr * total_batch_size * args.num_sample / 256
     args.warmup_lr = args.warmup_lr * total_batch_size * args.num_sample / 256
@@ -594,7 +606,7 @@ def main(args, ds_init):
         utils.auto_load_model(
             args=args, model=model, model_without_ddp=model_without_ddp,
             optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)
-    test_stats = final_test(data_loader_test, model, device, preds_file)
+    test_stats = final_test(data_loader_val, model, device, preds_file)
     torch.distributed.barrier()
     if global_rank == 0:
         print("Start merging results...")
