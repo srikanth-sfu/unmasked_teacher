@@ -483,7 +483,7 @@ def cosine_scheduler(base_value, final_value, epochs, niter_per_ep, warmup_epoch
     return schedule
 
 
-def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, model_ema=None):
+def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, model_ema=None, max_accuracy=0.0):
     output_dir = Path(args.output_dir)
     epoch_name = str(epoch)
     if loss_scaler is not None:
@@ -495,6 +495,7 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, mo
                 'epoch': epoch,
                 'scaler': loss_scaler.state_dict(),
                 'args': args,
+                'max_accuracy': max_accuracy,
             }
 
             if model_ema is not None:
@@ -502,13 +503,13 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, mo
 
             save_on_master(to_save, checkpoint_path)
     else:
-        client_state = {'epoch': epoch}
+        client_state = {'epoch': epoch, 'max_accuracy': max_accuracy}
         if model_ema is not None:
             client_state['model_ema'] = get_state_dict(model_ema)
         model.save_checkpoint(save_dir=args.output_dir, tag="checkpoint-%s" % epoch_name, client_state=client_state)
 
 
-def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, model_name='latest', model_ema=None):
+def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, model_name='latest', model_ema=None, max_accuracy=0.0):
     output_dir = Path(args.output_dir)
     model_name = model_name
     if loss_scaler is not None:
@@ -520,6 +521,7 @@ def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_sca
                 'epoch': epoch,
                 'scaler': loss_scaler.state_dict(),
                 'args': args,
+                'max_accuracy': max_accuracy,
             }
 
             if model_ema is not None:
@@ -527,7 +529,7 @@ def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_sca
 
             save_on_master(to_save, checkpoint_path)
     else:
-        client_state = {'epoch': epoch}
+        client_state = {'epoch': epoch, 'max_accuracy': max_accuracy}
         if model_ema is not None:
             client_state['model_ema'] = get_state_dict(model_ema)
         model.save_checkpoint(save_dir=args.output_dir, tag="checkpoint-%s" % model_name, client_state=client_state)
@@ -609,6 +611,7 @@ def load_specific_model(model, model_ema, args, output_dir, model_name):
     print(f"Auto resume the {model_name} checkpoint")
     _, client_states = model.load_checkpoint(args.output_dir, tag=f'checkpoint-{model_name}')
     args.start_epoch = client_states['epoch'] + 1
+    args.max_accuracy = client_states['max_accuracy'] 
     if model_ema is not None:
         if args.model_ema:
             _load_checkpoint_for_ema(model_ema, client_states['model_ema'])
