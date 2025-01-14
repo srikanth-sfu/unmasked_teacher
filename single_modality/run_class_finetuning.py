@@ -163,6 +163,9 @@ def get_args():
         'SSV2', 'UCF101', 'HMDB51', 'image_folder',
         'mitv1_sparse', 'ucf_hmdb'
         ], type=str, help='dataset')
+    parser.add_argument('--train_split_src', default='', type=str, help='train split')
+    parser.add_argument('--val_split_src', default='', type=str, help='val split')
+    parser.add_argument('--clip_labels', default='', type=str, help='label embeddings')
     
     parser.add_argument('--num_segments', type=int, default=1)
     parser.add_argument('--num_frames', type=int, default=16)
