@@ -12,7 +12,7 @@ from pathlib import Path
 import subprocess
 import torch
 import torch.distributed as dist
-from torch._six import inf
+from torch import inf
 import random
 
 from tensorboardX import SummaryWriter
@@ -307,6 +307,25 @@ def save_on_master(*args, **kwargs):
     if is_main_process():
         torch.save(*args, **kwargs)
 
+def init_distributed_mode_new(args):
+    if 'RANK' in os.environ and 'WORLD_SIZE' in os.environ:
+        args.rank = int(os.environ["RANK"])
+        args.world_size = int(os.environ['WORLD_SIZE'])
+        print(f"RANK and WORLD_SIZE in environ: {args.rank}/{args.world_size}")
+    else:
+        args.rank = -1
+        args.world_size = -1
+    args.gpu = args.local_rank
+    args.distributed = True
+    print(args.rank, args.world_size, args.local_rank, os.environ["LOCAL_RANK"])
+    torch.cuda.set_device(args.local_rank)
+    args.dist_backend = 'nccl'
+    print('| distributed init (rank {}): {}, gpu {}'.format(
+        args.rank, args.dist_url, args.gpu), flush=True)
+    torch.distributed.init_process_group(backend=args.dist_backend, init_method=args.dist_url,
+                                         world_size=args.world_size, rank=args.rank)
+    torch.distributed.barrier()
+    setup_for_distributed(args.rank == 0)
 
 def init_distributed_mode(args):
     if args.dist_on_itp:
