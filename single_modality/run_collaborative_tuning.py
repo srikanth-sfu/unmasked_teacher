@@ -467,7 +467,7 @@ def main(args, ds_init):
         init_scale=args.init_scale,
     )
     
-    moco = MoCo(moco_model, args.clip_decoder_embed_dim)	
+    moco = MoCo(moco_model, args.clip_output_dim)	
     model.add_module("moco", moco)
     patch_size = model.patch_embed.patch_size
     print("Patch size = %s" % str(patch_size))
