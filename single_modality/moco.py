@@ -176,6 +176,7 @@ class MoCo(nn.Module, TrainStepMixin):
 
     def forward(self, dist_model, q, k_in):
         model = dist_model.module
+        print(self.K, q.shape[0], k_in.shape[0])
         with(torch.cuda.amp.autocast()):
             
             q = self.query_model_forward(model, q)
