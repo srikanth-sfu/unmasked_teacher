@@ -573,7 +573,7 @@ def main(args, ds_init):
         criterion_target = torch.nn.CrossEntropyLoss(reduction="none")
 
     print("criterion = %s" % str(criterion))
-
+    args.max_accuracy_src, args.max_accuracy_tgt = 0, 0
     utils.auto_load_model(
         args=args, model=model, model_without_ddp=model_without_ddp,
         optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)
@@ -596,7 +596,8 @@ def main(args, ds_init):
 
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
-    max_accuracy_src, max_accuracy_tgt = 0.0, 0.0
+    max_accuracy_src, max_accuracy_tgt = args.max_accuracy_src, args.max_accuracy_tgt
+    print("Max tgt accuracy", max_accuracy_tgt)
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
@@ -614,14 +615,6 @@ def main(args, ds_init):
             clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target,
             len_iterable=data_loader_train, tubelet_params=tubelet_transform
         )
-        if args.output_dir and args.save_ckpt:
-            if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:
-                utils.save_model(
-                    args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                    loss_scaler=loss_scaler, epoch=epoch, model_ema=model_ema)
-            utils.save_latest_model(
-                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch, model_name='latest', model_ema=model_ema)
         if data_loader_val_src is not None:
             test_stats_src = validation_one_epoch(data_loader_val_src, model, device)
             test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device)
@@ -636,7 +629,8 @@ def main(args, ds_init):
                 if args.output_dir and args.save_ckpt:
                     utils.save_latest_model(
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                        loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema)
+                        loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema,
+                        max_accuracy_src=max_accuracy_src, max_accuracy_tgt=max_accuracy_tgt)
             print(f'Max accuracy -- src val: {max_accuracy_src:.2f}%')
             print(f'Max accuracy -- tgt val: {max_accuracy_tgt:.2f}%')
             if log_writer is not None:
@@ -656,6 +650,16 @@ def main(args, ds_init):
             log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                          'epoch': epoch,
                          'n_parameters': n_parameters}
+        if args.output_dir and args.save_ckpt:
+            if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:
+                utils.save_model(
+                    args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                    loss_scaler=loss_scaler, epoch=epoch, model_ema=model_ema, 
+                    max_accuracy_src=max_accuracy_src, max_accuracy_tgt=max_accuracy_tgt)
+            utils.save_latest_model(
+                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                loss_scaler=loss_scaler, epoch=epoch, model_name='latest', model_ema=model_ema, 
+                max_accuracy_src=max_accuracy_src, max_accuracy_tgt=max_accuracy_tgt)
         if args.output_dir and utils.is_main_process():
             if log_writer is not None:
                 log_writer.flush()
