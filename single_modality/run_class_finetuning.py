@@ -163,6 +163,9 @@ def get_args():
         'SSV2', 'UCF101', 'HMDB51', 'image_folder',
         'mitv1_sparse', 'ucf_hmdb'
         ], type=str, help='dataset')
+    parser.add_argument('--train_split_src', default='', type=str, help='train split')
+    parser.add_argument('--val_split_src', default='', type=str, help='val split')
+    parser.add_argument('--clip_labels', default='', type=str, help='label embeddings')
     
     parser.add_argument('--num_segments', type=int, default=1)
     parser.add_argument('--num_frames', type=int, default=16)
@@ -526,7 +529,7 @@ def main(args, ds_init):
         criterion = torch.nn.CrossEntropyLoss()
 
     print("criterion = %s" % str(criterion))
-
+    args.max_accuracy = 0
     utils.auto_load_model(
         args=args, model=model, model_without_ddp=model_without_ddp,
         optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)
@@ -549,7 +552,8 @@ def main(args, ds_init):
 
     print(f"Start training for {args.epochs} epochs")
     start_time = time.time()
-    max_accuracy = 0.0
+    max_accuracy = args.max_accuracy
+    print("Max accuracy", max_accuracy)
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
@@ -562,14 +566,6 @@ def main(args, ds_init):
             lr_schedule_values=lr_schedule_values, wd_schedule_values=wd_schedule_values,
             num_training_steps_per_epoch=num_training_steps_per_epoch, update_freq=args.update_freq,
         )
-        if args.output_dir and args.save_ckpt:
-            if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:
-                utils.save_model(
-                    args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                    loss_scaler=loss_scaler, epoch=epoch, model_ema=model_ema)
-            utils.save_latest_model(
-                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                loss_scaler=loss_scaler, epoch=epoch, model_name='latest', model_ema=model_ema)
         if data_loader_val is not None:
             test_stats = validation_one_epoch(data_loader_val, model, device)
             timestep = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
@@ -579,7 +575,16 @@ def main(args, ds_init):
                 if args.output_dir and args.save_ckpt:
                     utils.save_latest_model(
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                        loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema)
+                        loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema, max_accuracy=max_accuracy)
+        
+        if args.output_dir and args.save_ckpt:
+            if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:
+                utils.save_model(
+                    args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                    loss_scaler=loss_scaler, epoch=epoch, model_ema=model_ema, max_accuracy=max_accuracy)
+            utils.save_latest_model(
+                args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                loss_scaler=loss_scaler, epoch=epoch, model_name='latest', model_ema=model_ema, max_accuracy=max_accuracy)
 
             print(f'Max accuracy: {max_accuracy:.2f}%')
             if log_writer is not None:
