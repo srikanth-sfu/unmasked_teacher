@@ -268,10 +268,10 @@ class VisionTransformer(nn.Module):
         self.fc_dropout = nn.Dropout(p=fc_drop_rate) if fc_drop_rate > 0 else nn.Identity()
         self.head = nn.Linear(embed_dim, num_classes) if num_classes > 0 else nn.Identity()
 
-        if use_learnable_pos_emb:
+        if use_learnable_pos_emb and num_classes > 0:
             trunc_normal_(self.pos_embed, std=.02)
-
-        trunc_normal_(self.head.weight, std=.02)
+        if num_classes > 0:
+            trunc_normal_(self.head.weight, std=.02)
         self.apply(self._init_weights)
 
         self.head.weight.data.mul_(init_scale)
