@@ -35,7 +35,6 @@ python -m torch.distributed.launch --nproc_per_node 2 run_collaborative_tuning.p
         --test_num_segment 4 \
         --test_num_crop 3 \
         --dist_eval \
-        --enable_deepspeed \
         --data_set ucf_hmdb \
         --data_set_target hmdb_ucf \
         --video_ext .mp4 \
