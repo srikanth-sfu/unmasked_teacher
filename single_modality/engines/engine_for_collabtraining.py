@@ -65,6 +65,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     clip_loss_ratio=0.5, mask_ratio=0., clip_label_embedding=None, len_iterable=None, moco=None,
                     optimizer_moco=None):
     model.train(True)
+    moco.train(True)
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     metric_logger.add_meter('min_lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
