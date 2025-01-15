@@ -49,6 +49,7 @@ class VideoClsDataset(Dataset):
         self.args = args
         self.aug = False
         self.rand_erase = False
+        self.video_ext = args.video_ext
         assert num_segment == 1
         if self.mode in ['train']:
             self.aug = True
@@ -238,6 +239,8 @@ class VideoClsDataset(Dataset):
 
     def loadvideo_decord(self, sample, sample_rate_scale=1, chunk_nb=0):
         """Load video content using Decord"""
+        if not sample.endswith(self.video_ext):
+            sample += self.video_ext
         fname = sample
         fname = os.path.join(self.prefix, fname)
 

@@ -17,7 +17,7 @@ from utils import NativeScalerWithGradNormCount as NativeScaler
 from utils import multiple_pretrain_samples_collate
 import utils
 from models import *
-
+from collections import OrderedDict
 
 def get_args():
     parser = argparse.ArgumentParser('VideoMAE pre-training script', add_help=False)
@@ -44,6 +44,10 @@ def get_args():
                         help='temporal tube size for the patch embedding')
     parser.add_argument('--use_learnable_pos_emb', action='store_true')
     parser.set_defaults(use_learnable_pos_emb=False)
+    parser.add_argument('--k710_weights', default='/home/ens/smuralidharan/checkpoints/umt/b16_ptk710_f8_res224.pth', type=str)
+    parser.add_argument('--model_key', default='model|module', type=str)
+    parser.add_argument('--model_prefix', default='', type=str)
+
 
     # CLIP decpder parameters
     parser.add_argument('--clip_teacher', default='clip_b16', type=str,
@@ -114,6 +118,7 @@ def get_args():
 
     # Dataset parameters
     parser.add_argument('--prefix', default='', type=str, help='prefix for data')
+    parser.add_argument("--video_ext", default="mp4")
     parser.add_argument('--split', default=' ', type=str, help='split for metadata')
     parser.add_argument('--data_path', default='you_data_path', type=str,
                         help='dataset path')
@@ -149,7 +154,7 @@ def get_args():
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
-    parser.add_argument('--local_rank', default=-1, type=int)
+    parser.add_argument('--local-rank', default=-1, type=int)
     parser.add_argument('--dist_on_itp', action='store_true')
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
 
@@ -178,7 +183,7 @@ def get_model(args):
 
 
 def main(args):
-    utils.init_distributed_mode(args)
+    utils.init_distributed_mode_new(args)
 
     print(args)
 
@@ -197,6 +202,75 @@ def main(args):
     print("Tubelet size = %s" % str(args.tubelet_size))
     args.window_size = (args.num_frames // args.tubelet_size, args.input_size // patch_size[0], args.input_size // patch_size[1])
     args.patch_size = patch_size
+
+    
+    checkpoint = torch.load(args.k710_weights, map_location='cpu')
+
+    print("Load ckpt from %s" % args.k710_weights)
+    checkpoint_model = None
+    for model_key in args.model_key.split('|'):
+        if model_key in checkpoint:
+            checkpoint_model = checkpoint[model_key]
+            print("Load state_dict by model_key = %s" % model_key)
+            break
+    if checkpoint_model is None:
+        checkpoint_model = checkpoint
+
+    
+    all_keys = list(checkpoint_model.keys())
+    new_dict = OrderedDict()
+    for key in all_keys:
+        if key.startswith('backbone.'):
+            new_dict[key] = checkpoint_model[key]
+        elif key.startswith('encoder.'):
+            new_dict[key] = checkpoint_model[key]
+        else:
+            new_dict[key] = checkpoint_model[key]
+    checkpoint_model = new_dict
+
+    if 'pos_embed' in checkpoint_model:
+        pos_embed_checkpoint = checkpoint_model['pos_embed']
+        embedding_size = pos_embed_checkpoint.shape[-1] # channel dim
+        num_patches = model.patch_embed.num_patches # 
+        num_extra_tokens = model.pos_embed.shape[-2] - num_patches # 0/1
+
+        # we use 8 frames for pretraining
+        orig_t_size = 8 // model.patch_embed.tubelet_size
+        new_t_size = args.num_frames // model.patch_embed.tubelet_size
+        # height (== width) for the checkpoint position embedding
+        orig_size = int(((pos_embed_checkpoint.shape[-2] - num_extra_tokens)//(orig_t_size)) ** 0.5)
+        # height (== width) for the new position embedding
+        new_size = int((num_patches // (new_t_size) )** 0.5)
+        
+        if orig_t_size != new_t_size:
+            print(f"Temporal interpolate from {orig_t_size} to {new_t_size}")
+            tmp_pos_embed = pos_embed_checkpoint.view(1, orig_t_size, -1, embedding_size)
+            tmp_pos_embed = tmp_pos_embed.permute(0, 2, 3, 1).reshape(-1, embedding_size, orig_t_size)
+            tmp_pos_embed = torch.nn.functional.interpolate(tmp_pos_embed, size=new_t_size, mode='linear')
+            tmp_pos_embed = tmp_pos_embed.view(1, -1, embedding_size, new_t_size)
+            tmp_pos_embed = tmp_pos_embed.permute(0, 3, 1, 2).reshape(1, -1, embedding_size)
+            checkpoint_model['pos_embed'] = tmp_pos_embed
+            pos_embed_checkpoint = tmp_pos_embed
+
+        # class_token and dist_token are kept unchanged
+        if orig_size != new_size:
+            print("Position interpolate from %dx%d to %dx%d" % (orig_size, orig_size, new_size, new_size))
+            extra_tokens = pos_embed_checkpoint[:, :num_extra_tokens]
+            # only the position tokens are interpolated
+            pos_tokens = pos_embed_checkpoint[:, num_extra_tokens:]
+            # B, L, C -> BT, H, W, C -> BT, C, H, W
+            pos_tokens = pos_tokens.reshape(-1, new_t_size, orig_size, orig_size, embedding_size)
+            pos_tokens = pos_tokens.reshape(-1, orig_size, orig_size, embedding_size).permute(0, 3, 1, 2)
+            pos_tokens = torch.nn.functional.interpolate(
+                pos_tokens, size=(new_size, new_size), mode='bicubic', align_corners=False)
+            # BT, C, H, W -> BT, H, W, C ->  B, T, H, W, C
+            pos_tokens = pos_tokens.permute(0, 2, 3, 1).reshape(-1, new_t_size, new_size, new_size, embedding_size) 
+            pos_tokens = pos_tokens.flatten(1, 3) # B, L, C
+            new_pos_embed = torch.cat((extra_tokens, pos_tokens), dim=1)
+            checkpoint_model['pos_embed'] = new_pos_embed
+
+    utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix)
+
 
     # teacher model
     print(f'Teacher model: {args.clip_teacher}')
@@ -218,7 +292,7 @@ def main(args):
     global_rank = utils.get_rank()
     sampler_rank = global_rank
     num_training_steps_per_epoch = len(dataset_train) // args.batch_size // num_tasks
-
+    print("NUM TRAINING STEPS PER EPOCH:", num_training_steps_per_epoch)
     sampler_train = torch.utils.data.DistributedSampler(dataset_train, num_replicas=num_tasks, rank=sampler_rank, shuffle=True)
     print("Sampler_train = %s" % str(sampler_train))
 

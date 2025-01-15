@@ -1,9 +1,9 @@
 export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
-MODEL_PATH='/project/def-mpederso/smuralid/checkpoints/umt/pretrain/baseline_b16_ucf_hmdb/checkpoint-49.pth'
+MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/pretrain/baseline_b16_ucf_hmdb/checkpoint-49.pth'
 JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
-OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/src_finetune/$JOB_NAME"
+OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt/src_finetune/$JOB_NAME"
 PREFIX="${SLURM_TMPDIR}/data/ucf_hmdb/"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/'
@@ -34,10 +34,13 @@ python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --test_num_segment 4 \
         --test_num_crop 3 \
         --dist_eval \
-        --enable_deepspeed \
         --test_best \
         --data_set ucf_hmdb \
         --video_ext .mp4 \
         --split ',' \
         --mixup 0.0 \
-        --cutmix 0.0
+        --cutmix 0.0 \
+        --train_split_src 'ucf101_train_hmdb_ucf.csv' \
+        --val_split_src 'ucf101_val_hmdb_ucf.csv' \
+        --clip_labels 'video_splits/ucf_hmdb_classnames.npy'
+

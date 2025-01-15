@@ -2,7 +2,7 @@ export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
 JOB_NAME='baseline_b16_ucf_hmdb'
-OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/pretrain/$JOB_NAME"
+OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt/pretrain/$JOB_NAME"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/hmdb51_train_hmdb_ucf.csv'
 
@@ -12,7 +12,7 @@ DATA_PATH='video_splits/hmdb51_train_hmdb_ucf.csv'
 #         --ntasks=${GPUS} \
 #         --ntasks-per-node=${GPUS_PER_NODE} \
 #         --cpus-per-task=${CPUS_PER_TASK} \
-python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py \
+python -u -m torch.distributed.launch --nproc_per_node 2 run_umt_pretraining.py \
     --data_path ${DATA_PATH} \
     --prefix ${SLURM_TMPDIR}/data/ucf_hmdb/ \
     --num_sample 1 \
