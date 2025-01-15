@@ -449,6 +449,9 @@ def main(args, ds_init):
         use_mean_pooling=args.use_mean_pooling,
         init_scale=args.init_scale,
     )
+    for param in moco_model.parameters():
+        param.requires_grad = False
+
     moco = MoCo(moco_model, args.clip_output_dim)	
 
     model = create_model(
