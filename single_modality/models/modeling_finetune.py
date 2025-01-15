@@ -228,7 +228,8 @@ class VisionTransformer(nn.Module):
                  tubelet_size=2,
                  use_checkpoint=False,
                  checkpoint_num=0,
-                 use_mean_pooling=True):
+                 use_mean_pooling=True,
+                 moco=None):
         super().__init__()
         self.num_classes = num_classes
         self.num_features = self.embed_dim = embed_dim  # num_features for consistency with other models
@@ -276,6 +277,8 @@ class VisionTransformer(nn.Module):
         if num_classes > 0:
             self.head.weight.data.mul_(init_scale)
             self.head.bias.data.mul_(init_scale)
+        if moco is not None:
+            self.moco = moco
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -323,7 +326,7 @@ class VisionTransformer(nn.Module):
         else:
             return x[:, 0]
 
-    def forward(self, x, mask=None, moco=False, tgt_tubelet=None):
+    def _forward_impl(self, x, mask=None, moco=False, tgt_tubelet=None):
         if moco:
             x = self.forward_features(x, mask=None)
             return self.moco(self, x, tgt_tubelet)["nce_loss"].mean()

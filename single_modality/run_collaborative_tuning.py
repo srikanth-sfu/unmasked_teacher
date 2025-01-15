@@ -432,23 +432,6 @@ def main(args, ds_init):
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
 
     print(args.num_frames * args.num_segments,args.init_scale, args.use_checkpoint, args.checkpoint_num)
-    model = create_model(
-        args.model,
-        pretrained=False,
-        num_classes=args.nb_classes,
-        all_frames=args.num_frames * args.num_segments,
-        tubelet_size=args.tubelet_size,
-        use_learnable_pos_emb=args.use_learnable_pos_emb,
-        fc_drop_rate=args.fc_drop_rate,
-        drop_rate=args.drop,
-        drop_path_rate=args.drop_path,
-        attn_drop_rate=args.attn_drop_rate,
-        drop_block_rate=None,
-        use_checkpoint=args.use_checkpoint,
-        checkpoint_num=args.checkpoint_num,
-        use_mean_pooling=args.use_mean_pooling,
-        init_scale=args.init_scale,
-    )
     moco_model = create_model(
         args.model,
         pretrained=False,
@@ -466,9 +449,27 @@ def main(args, ds_init):
         use_mean_pooling=args.use_mean_pooling,
         init_scale=args.init_scale,
     )
-    
     moco = MoCo(moco_model, args.clip_output_dim)	
-    model.add_module("moco", moco)
+
+    model = create_model(
+        args.model,
+        pretrained=False,
+        num_classes=args.nb_classes,
+        all_frames=args.num_frames * args.num_segments,
+        tubelet_size=args.tubelet_size,
+        use_learnable_pos_emb=args.use_learnable_pos_emb,
+        fc_drop_rate=args.fc_drop_rate,
+        drop_rate=args.drop,
+        drop_path_rate=args.drop_path,
+        attn_drop_rate=args.attn_drop_rate,
+        drop_block_rate=None,
+        use_checkpoint=args.use_checkpoint,
+        checkpoint_num=args.checkpoint_num,
+        use_mean_pooling=args.use_mean_pooling,
+        init_scale=args.init_scale,
+        moco=moco,
+    )
+
     patch_size = model.patch_embed.patch_size
     print("Patch size = %s" % str(patch_size))
     args.window_size = (args.num_frames // args.tubelet_size, args.input_size // patch_size[0], args.input_size // patch_size[1])
