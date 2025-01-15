@@ -37,7 +37,7 @@ class MoCo(nn.Module, TrainStepMixin):
     def __init__(self,
                  model,
                  in_channels: int,
-                 queue_size: int = 384,
+                 queue_size: int = 400,
                  momentum: float = 0.999,
                  temperature: float = 0.07):
         super(MoCo, self).__init__()
@@ -176,7 +176,6 @@ class MoCo(nn.Module, TrainStepMixin):
 
     def forward(self, dist_model, q, k_in):
         model = dist_model.module
-        print(self.K, q.shape[0], k_in.shape[0])
         with(torch.cuda.amp.autocast()):
             
             q = self.query_model_forward(model, q)
