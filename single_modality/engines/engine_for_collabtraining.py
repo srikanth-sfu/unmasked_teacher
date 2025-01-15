@@ -154,6 +154,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             bool_masked_pos[pos1, pos2] = 0
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
         moco_loss = model.module.moco.forward(model, src_tubelet, tgt_tubelet)["nce_loss"].mean()        
+        print(moco_loss)
         with torch.cuda.amp.autocast():
             x = model.patch_embed(clip_videos)
             B, _, _ = x.size()
