@@ -153,7 +153,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             pos2 = importance[:, :N_vis]
             bool_masked_pos[pos1, pos2] = 0
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
-        moco_loss = model(src_tubelet, moco=True, moco_model=model, tgt_tubelet=tgt_tubelet)       
+        #moco_loss = model(src_tubelet, moco=True, moco_model=model, tgt_tubelet=tgt_tubelet)       
         with torch.cuda.amp.autocast():
             outputs_clip = model(clip_videos, mask=bool_masked_pos)
             if target_mask.type(torch.int).sum() > 0: 
@@ -162,7 +162,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             else:
                 loss_target = torch.tensor(0.)
 
-        loss = loss+loss_target+moco_loss
+        loss = loss+loss_target#+moco_loss
         loss_value = loss.item()
         
         if not math.isfinite(loss_value):
