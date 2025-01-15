@@ -544,6 +544,7 @@ def main(args, ds_init):
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
             model_without_ddp = model.module
             teacher_model = torch.nn.parallel.DistributedDataParallel(teacher_model, device_ids=[args.gpu], find_unused_parameters=False)
+            model.enable_gradient_checkpointing(gradient_checkpointing_kwargs={"use_reentrant": False})
 
 
         optimizer = create_optimizer(
