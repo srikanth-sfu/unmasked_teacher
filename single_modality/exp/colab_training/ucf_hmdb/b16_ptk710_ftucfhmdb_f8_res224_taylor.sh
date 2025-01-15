@@ -1,7 +1,7 @@
 export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
-MODEL_PATH='/storage/smuralidharan/checkpoints/umt/src_finetune/baseline_b16_ucf_hmdb_f8_res224/'
+MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/src_finetune/baseline_b16_ucf_hmdb_f8_res224/'
 JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
 OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt_tubelet/colabtrainonly/$JOB_NAME"
 PREFIX="/storage/smuralidharan/data/ucf_hmdb/"

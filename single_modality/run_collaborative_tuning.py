@@ -538,6 +538,8 @@ def main(args, ds_init):
         assert model.gradient_accumulation_steps() == args.update_freq
     else:
         if args.distributed:
+            print("Loading model outside deepspeed")
+            utils.load_model_colab(model_engine=model_engine, model=model, output_dir=args.finetune, model_name=args.finetune_tag)
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
             model_without_ddp = model.module
             teacher_model = torch.nn.parallel.DistributedDataParallel(teacher_model, device_ids=[args.gpu], find_unused_parameters=False)
