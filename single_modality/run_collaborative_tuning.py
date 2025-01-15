@@ -448,11 +448,13 @@ def main(args, ds_init):
         use_mean_pooling=args.use_mean_pooling,
         init_scale=args.init_scale,
     )
+    print(args.model)
+    os._exit(1)
 	
     moco_model = create_model(
         args.model,
         pretrained=False,
-        num_classes=args.nb_classes,
+        num_classes=0,
         all_frames=args.num_frames * args.num_segments,
         tubelet_size=args.tubelet_size,
         use_learnable_pos_emb=args.use_learnable_pos_emb,
