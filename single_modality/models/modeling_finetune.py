@@ -273,9 +273,9 @@ class VisionTransformer(nn.Module):
         if num_classes > 0:
             trunc_normal_(self.head.weight, std=.02)
         self.apply(self._init_weights)
-
-        self.head.weight.data.mul_(init_scale)
-        self.head.bias.data.mul_(init_scale)
+        if num_classes > 0:
+            self.head.weight.data.mul_(init_scale)
+            self.head.bias.data.mul_(init_scale)
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
