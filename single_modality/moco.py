@@ -174,9 +174,10 @@ class MoCo(nn.Module, TrainStepMixin):
         self.queue_ptr[0] = ptr
 
 
-    def forward(self, model, q, k_in):
-        
+    def forward(self, dist_model, q, k_in):
+        model = dist_model.module
         with(torch.cuda.amp.autocast()):
+            
             q = self.query_model_forward(model, q)
             q = self.fc(q)
             q = nn.functional.normalize(q, dim=1)
