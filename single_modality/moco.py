@@ -49,7 +49,7 @@ class MoCo(nn.Module, TrainStepMixin):
         self.queue = nn.functional.normalize(self.queue, dim=0)
 
         self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
-        self.key_encoder = copy.deepcopy(model)
+        self.key_encoder = model
         self.fc = nn.Linear(in_channels,128)
         self.key_fc = nn.Linear(in_channels,128)
     
@@ -174,7 +174,7 @@ class MoCo(nn.Module, TrainStepMixin):
         self.queue_ptr[0] = ptr
 
 
-    def forward(self, model, q, k_in, backbone):
+    def forward(self, model, q, k_in):
         
         with(torch.cuda.amp.autocast()):
             q = self.query_model_forward(model, q)
@@ -183,7 +183,7 @@ class MoCo(nn.Module, TrainStepMixin):
 
             # # compute key features
             with torch.no_grad():
-                self._momentum_update_key_encoder(backbone=backbone)
+                self._momentum_update_key_encoder(backbone=model)
                 im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
                 tgt_tubelet = self.key_encoder_forward(im_k)
                 k = self.key_fc(tgt_tubelet)
