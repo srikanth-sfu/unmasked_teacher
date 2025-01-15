@@ -8,7 +8,7 @@ PREFIX="/storage/smuralidharan/data/ucf_hmdb/"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/'
 
-python -m torch.distributed.launch --nproc_per_node 2 run_collaborative_tuning.py \
+python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.py \
         --model vit_base_patch16_224 \
         --data_path ${DATA_PATH} \
         --prefix ${PREFIX} \
