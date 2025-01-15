@@ -154,31 +154,31 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             bool_masked_pos[pos1, pos2] = 0
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
         moco_loss = model.module.moco.forward(model, src_tubelet, tgt_tubelet)["nce_loss"].mean()        
-        print(moco_loss)
         with torch.cuda.amp.autocast():
-            x = model.patch_embed(clip_videos)
+            model_nondist = model.module
+            x = model_nondist.patch_embed(clip_videos)
             B, _, _ = x.size()
 
-            if model.pos_embed is not None:
-                x = x + model.pos_embed.expand(B, -1, -1).type_as(x).to(x.device).clone().detach()
+            if model_nondist.pos_embed is not None:
+                x = x + model_nondist.pos_embed.expand(B, -1, -1).type_as(x).to(x.device).clone().detach()
             B, _, C = x.shape
             x = x[~bool_masked_pos].reshape(B, -1, C) # ~mask means visible
 
-            x = model.pos_drop(x)
+            x = model_nondist.pos_drop(x)
 
-            for idx, blk in enumerate(model.blocks):
-                if model.use_checkpoint and idx < model.checkpoint_num:
+            for idx, blk in enumerate(model_nondist.blocks):
+                if model_nondist.use_checkpoint and idx < model_nondist.checkpoint_num:
                     x = checkpoint.checkpoint(blk, x)
                 else:
                     x = blk(x)
 
-            x = model.norm(x)
-            if model.fc_norm is not None:
-                x = model.fc_norm(x.mean(1))
+            x = model_nondist.norm(x)
+            if model_nondist.fc_norm is not None:
+                x = model_nondist.fc_norm(x.mean(1))
             else:
                 x = x[:, 0]
             
-            outputs_clip = model.head(model.fc_dropout(x))
+            outputs_clip = model_nondist.head(model_nondist.fc_dropout(x))
             if target_mask.type(torch.int).sum() > 0: 
                 loss_target = criterion_target(outputs_clip[target_mask], target_labels[target_mask])
                 loss_target = (loss_target * target_conf[target_mask]).mean()
