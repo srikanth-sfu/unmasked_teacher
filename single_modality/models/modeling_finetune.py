@@ -326,7 +326,7 @@ class VisionTransformer(nn.Module):
         else:
             return x[:, 0]
 
-    def _forward_impl(self, x, mask=None, moco=False, tgt_tubelet=None):
+    def forward(self, x, mask=None, moco=False, tgt_tubelet=None):
         if moco:
             x = self.forward_features(x, mask=None)
             return self.moco(self, x, tgt_tubelet)["nce_loss"].mean()
