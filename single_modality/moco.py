@@ -104,28 +104,6 @@ class MoCo(nn.Module, TrainStepMixin):
         else:
             x = x[:, 0]
         return x
-    
-    def query_model_forward(self,model,clip_videos):
-        x = model.patch_embed(clip_videos)
-        B, _, _ = x.size()
-
-        if model.pos_embed is not None:
-            x = x + model.pos_embed.expand(B, -1, -1).type_as(x).to(x.device).clone().detach()
-        B, _, C = x.shape    
-        x = model.pos_drop(x)
-
-        for idx, blk in enumerate(model.blocks):
-            if model.use_checkpoint and idx < model.checkpoint_num:
-                x = checkpoint.checkpoint(blk, x)
-            else:
-                x = blk(x)
-
-        x = model.norm(x)
-        if model.fc_norm is not None:
-            x = model.fc_norm(x.mean(1))
-        else:
-            x = x[:, 0]
-        return x
 
     @torch.no_grad()
     def _batch_unshuffle_ddp(self, x, idx_unshuffle):
@@ -178,7 +156,6 @@ class MoCo(nn.Module, TrainStepMixin):
         model = dist_model.module
         with(torch.cuda.amp.autocast()):
             
-            q = self.query_model_forward(model, q)
             q = self.fc(q)
             q = nn.functional.normalize(q, dim=1)
 
