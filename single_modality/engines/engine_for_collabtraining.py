@@ -62,7 +62,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     start_steps=None, lr_schedule_values=None, wd_schedule_values=None,
                     num_training_steps_per_epoch=None, update_freq=None,
                     teacher_model=None, clip_input_resolution=224, criterion_target=None, tubelet_params=None,
-                    clip_loss_ratio=0.5, mask_ratio=0., clip_label_embedding=None, len_iterable=None):
+                    clip_loss_ratio=0.5, mask_ratio=0., clip_label_embedding=None, len_iterable=None, moco=None,
+                    optimizer_moco=None):
     model.train(True)
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -153,7 +154,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             pos2 = importance[:, :N_vis]
             bool_masked_pos[pos1, pos2] = 0
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
-        moco_loss = model(src_tubelet, moco=True, tgt_tubelet=tgt_tubelet)       
+        src_tubelet = model(src_tubelet, return_feats=True)
+        moco_loss = moco(model.module, src_tubelet, target_tubelet)["nce_loss"].mean()
         with torch.cuda.amp.autocast():
             outputs_clip = model(clip_videos, mask=bool_masked_pos)
             if target_mask.type(torch.int).sum() > 0: 

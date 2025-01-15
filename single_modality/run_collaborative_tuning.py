@@ -471,7 +471,7 @@ def main(args, ds_init):
         checkpoint_num=args.checkpoint_num,
         use_mean_pooling=args.use_mean_pooling,
         init_scale=args.init_scale,
-        moco=moco,
+        moco=None,
     )
 
     patch_size = model.patch_embed.patch_size
@@ -482,6 +482,7 @@ def main(args, ds_init):
 
     model.to(device)
     teacher_model.to(device)
+    moco.to(device)
 
     model_ema = None
     if args.model_ema:
@@ -493,6 +494,7 @@ def main(args, ds_init):
         print("Using EMA with decay = %.8f" % args.model_ema_decay)
 
     model_without_ddp = model
+    moco_model_without_ddp = moco
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     print("Model = %s" % str(model_without_ddp))
@@ -546,15 +548,16 @@ def main(args, ds_init):
             print("Loading model outside deepspeed")
             utils.load_model_colab(model_engine=None, model=model, output_dir=args.finetune, model_name=None, deepspeed=False)
             #model.enable_gradient_checkpointing(gradient_checkpointing_kwargs={"use_reentrant": False})
-            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=False)
+            model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
             model_without_ddp = model.module
             teacher_model = torch.nn.parallel.DistributedDataParallel(teacher_model, device_ids=[args.gpu], find_unused_parameters=False)
-
-
+            moco = torch.nn.parallel.DistributedDataParallel(moco, device_ids=[args.gpu], find_unused_parameters=True)
+            
         optimizer = create_optimizer(
             args, model_without_ddp, skip_list=skip_weight_decay_list,
             get_num_layer=assigner.get_layer_id if assigner is not None else None, 
             get_layer_scale=assigner.get_scale if assigner is not None else None)
+        optimizer_moco = create_optimizer(args, moco_model_without_ddp)
         loss_scaler = NativeScaler()
 
     print("Use step level LR scheduler!")
@@ -621,7 +624,7 @@ def main(args, ds_init):
             teacher_model=teacher_model, clip_input_resolution=args.clip_input_resolution,
             clip_loss_ratio=args.clip_loss_ratio, mask_ratio=args.mask_ratio,
             clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target,
-            len_iterable=len(data_loader_train), tubelet_params=tubelet_transform
+            len_iterable=len(data_loader_train), tubelet_params=tubelet_transform, moco=moco, optimizer_moco=optimizer_moco
         )
         if data_loader_val_src is not None:
             test_stats_src = validation_one_epoch(data_loader_val_src, model, device)
