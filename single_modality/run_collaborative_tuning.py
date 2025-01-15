@@ -453,7 +453,7 @@ def main(args, ds_init):
         param.requires_grad = False
 
     moco = MoCo(moco_model, args.clip_output_dim)	
-    for param in moco_model.key_fc.parameters():
+    for param in moco.key_fc.parameters():
         param.requires_grad = False
     model = create_model(
         args.model,
