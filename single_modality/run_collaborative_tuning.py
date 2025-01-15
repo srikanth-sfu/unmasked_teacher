@@ -617,7 +617,7 @@ def main(args, ds_init):
             teacher_model=teacher_model, clip_input_resolution=args.clip_input_resolution,
             clip_loss_ratio=args.clip_loss_ratio, mask_ratio=args.mask_ratio,
             clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target,
-            len_iterable=data_loader_train, tubelet_params=tubelet_transform
+            len_iterable=len(data_loader_train), tubelet_params=tubelet_transform
         )
         if data_loader_val_src is not None:
             test_stats_src = validation_one_epoch(data_loader_val_src, model, device)
