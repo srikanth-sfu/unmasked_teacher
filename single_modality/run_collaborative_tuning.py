@@ -431,6 +431,7 @@ def main(args, ds_init):
             prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
 
+    print(args.num_frames * args.num_segments,args.init_scale, args.use_checkpoint, args.checkpoint_num)
     model = create_model(
         args.model,
         pretrained=False,
@@ -448,9 +449,6 @@ def main(args, ds_init):
         use_mean_pooling=args.use_mean_pooling,
         init_scale=args.init_scale,
     )
-    print(args.model)
-    os._exit(1)
-	
     moco_model = create_model(
         args.model,
         pretrained=False,
