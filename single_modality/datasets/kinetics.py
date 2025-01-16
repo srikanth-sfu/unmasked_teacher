@@ -278,7 +278,8 @@ class VideoClsDataset(Dataset):
 
                 bound = min(temporal_start + converted_len, len(vr))
                 #all_index = [x for x in range(temporal_start, bound, self.frame_sample_rate)]
-                all_index = [x for x in range(temporal_start, bound, self.clip_len)]
+                #all_index = [x for x in range(temporal_start, bound, self.clip_len)]
+                all_index = list(np.linspace(temporal_start, bound, num=self.clip_len))
                 while len(all_index) < self.clip_len:
                     all_index.append(all_index[-1])
                 vr.seek(0)
