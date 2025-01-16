@@ -130,7 +130,7 @@ class VideoClsColabDataset(Dataset):
             
             sample_target = self.dataset_samples_target[index_target]
             label_target = self.label_array_target[index_target]
-            print(sample_target, sample, self.video_ext, self.video_ext_colab)
+            print(sample_target, sample, self.video_ext, self.video_ext_target)
             os._exit(1)
             buffer = self.loadvideo_decord(sample, sample_rate_scale=scale_t) # T H W C
             buffer_target = self.loadvideo_decord(sample_target, sample_rate_scale=scale_t, video_ext=self.video_ext_target) # T H W C
