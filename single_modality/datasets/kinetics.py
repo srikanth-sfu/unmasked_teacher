@@ -159,6 +159,7 @@ class VideoClsDataset(Dataset):
                 buffer = self.loadvideo_decord(sample, chunk_nb=chunk_nb)
 
             buffer = self.data_resize(buffer)
+            print(buffer.shape)
             if isinstance(buffer, list):
                 buffer = np.stack(buffer, 0)
 
