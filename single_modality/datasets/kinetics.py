@@ -81,7 +81,8 @@ class VideoClsDataset(Dataset):
             ])
         elif mode == 'test':
             self.data_resize = Compose([
-                Resize(size=(short_side_size), interpolation='bilinear')
+                Resize(size=(short_side_size), interpolation='bilinear'),
+                CenterCrop(size=(self.crop_size, self.crop_size)),
             ])
             self.data_transform = Compose([
                 ClipToTensor(),
@@ -148,7 +149,6 @@ class VideoClsDataset(Dataset):
             sample = self.test_dataset[index]
             chunk_nb, split_nb = self.test_seg[index]
             buffer = self.loadvideo_decord(sample, chunk_nb=chunk_nb)
-            print(buffer.shape)
 
             while len(buffer) == 0:
                 warnings.warn("video {}, temporal {}, spatial {} not found during testing".format(\
