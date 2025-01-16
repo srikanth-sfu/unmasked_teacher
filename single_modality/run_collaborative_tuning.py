@@ -546,6 +546,7 @@ def main(args, ds_init):
     else:
         if args.distributed:
             print("Loading model outside deepspeed")
+            utils.load_model_colab(model_engine=None, model=moco.key_encoder, output_dir=args.finetune, model_name=None, deepspeed=False)
             utils.load_model_colab(model_engine=None, model=model, output_dir=args.finetune, model_name=None, deepspeed=False)
             #model.enable_gradient_checkpointing(gradient_checkpointing_kwargs={"use_reentrant": False})
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
@@ -556,9 +557,10 @@ def main(args, ds_init):
         optimizer = create_optimizer(
             args, model_without_ddp, skip_list=skip_weight_decay_list,
             get_num_layer=assigner.get_layer_id if assigner is not None else None, 
-            get_layer_scale=assigner.get_scale if assigner is not None else None)
-        optimizer_moco = create_optimizer(args, moco_model_without_ddp)
+            get_layer_scale=assigner.get_scale if assigner is not None else None,
+            additional_params=moco_model_without_ddp)
         loss_scaler = NativeScaler()
+        loss_scaler_moco = NativeScaler()
 
     print("Use step level LR scheduler!")
     lr_schedule_values = utils.cosine_scheduler(
@@ -624,8 +626,8 @@ def main(args, ds_init):
             teacher_model=teacher_model, clip_input_resolution=args.clip_input_resolution,
             clip_loss_ratio=args.clip_loss_ratio, mask_ratio=args.mask_ratio,
             clip_label_embedding=args.clip_label_embedding, criterion_target=criterion_target,
-            len_iterable=len(data_loader_train), tubelet_params=tubelet_transform, moco=moco, optimizer_moco=optimizer_moco
-        )
+            len_iterable=len(data_loader_train), tubelet_params=tubelet_transform, moco=moco,
+            )
         if data_loader_val_src is not None:
             test_stats_src = validation_one_epoch(data_loader_val_src, model, device)
             test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device)

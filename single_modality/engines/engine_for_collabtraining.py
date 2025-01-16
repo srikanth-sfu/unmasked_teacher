@@ -63,7 +63,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     num_training_steps_per_epoch=None, update_freq=None,
                     teacher_model=None, clip_input_resolution=224, criterion_target=None, tubelet_params=None,
                     clip_loss_ratio=0.5, mask_ratio=0., clip_label_embedding=None, len_iterable=None, moco=None,
-                    optimizer_moco=None):
+                    optimizer_moco=None, loss_scaler_moco=None):
     model.train(True)
     moco.train(True)
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -93,12 +93,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         # Update LR & WD for the first acc
         if lr_schedule_values is not None or wd_schedule_values is not None and data_iter_step % update_freq == 0:
             for i, param_group in enumerate(optimizer.param_groups):
-                if lr_schedule_values is not None:
-                    param_group["lr"] = lr_schedule_values[it] * param_group["lr_scale"]
-                if wd_schedule_values is not None and param_group["weight_decay"] > 0:
-                    param_group["weight_decay"] = wd_schedule_values[it]
-            
-            for i, param_group in enumerate(optimizer_moco.param_groups):
                 if lr_schedule_values is not None:
                     param_group["lr"] = lr_schedule_values[it] * param_group["lr_scale"]
                 if wd_schedule_values is not None and param_group["weight_decay"] > 0:
@@ -163,7 +157,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             bool_masked_pos[pos1, pos2] = 0
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
         src_tubelet = model(src_tubelet, return_feats=True)
-        moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
+        #moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
         with torch.cuda.amp.autocast():
             outputs_clip = model(clip_videos, mask=bool_masked_pos)
             if target_mask.type(torch.int).sum() > 0: 
@@ -172,7 +166,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             else:
                 loss_target = torch.tensor(0.)
 
-        loss = loss+loss_target+moco_loss
+        loss = loss+loss_target#+moco_loss
         loss_value = loss.item()
         
         if not math.isfinite(loss_value):
@@ -183,7 +177,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         if loss_scaler is None:
             loss /= update_freq
             model.backward(loss)
+            moco.backward()
             model.step()
+            moco.step()
             if (data_iter_step + 1) % update_freq == 0:
                 # model.zero_grad()
                 # Deepspeed will call step() & model.zero_grad() automatic
@@ -196,8 +192,9 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
             loss /= update_freq
             grad_norm = loss_scaler(loss, optimizer, clip_grad=max_norm,
-                                    parameters=model.parameters(), create_graph=is_second_order,
+                                    parameters=list(model.parameters())+list(moco.parameters()), create_graph=is_second_order,
                                     update_grad=(data_iter_step + 1) % update_freq == 0)
+
             if (data_iter_step + 1) % update_freq == 0:
                 optimizer.zero_grad()
                 if model_ema is not None:

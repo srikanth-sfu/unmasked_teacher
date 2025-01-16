@@ -651,11 +651,12 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                     load_specific_model(model, model_ema, args, output_dir, model_name='latest_ckpt')
 
 def load_model_colab(model_engine, model, output_dir, model_name, deepspeed=True):
-    print(f"Loading {model_name} checkpoint for colab training")
     if deepspeed:
+        print(f"Loading {model_name} checkpoint for colab training")
         pth = os.path.join(output_dir, "checkpoint-best/mp_rank_00_model_states.pt")
     else:
         pth = os.path.join(output_dir, "checkpoint-best.pth")
+        print(f"Loading {pth} checkpoint for colab training")
     checkpoint = torch.load(pth)
     model_state_dict = checkpoint.get("module", {})
     model.load_state_dict(model_state_dict, strict=False)
