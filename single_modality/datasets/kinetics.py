@@ -168,8 +168,8 @@ class VideoClsDataset(Dataset):
                 spatial_step = 1.0 * (max(buffer.shape[1], buffer.shape[2]) - self.short_side_size) \
                                     / (self.test_num_crop - 1)
                 spatial_start = int(split_nb * spatial_step)
+            print(spatial_start,spatial_start + self.short_side_size, self.short_side_size)
             if buffer.shape[1] >= buffer.shape[2]:
-                print(spatial_start,spatial_start + self.short_side_size, self.short_side_size)
                 buffer = buffer[:, spatial_start:spatial_start + self.short_side_size, :, :]
             else:
                 buffer = buffer[:, :, spatial_start:spatial_start + self.short_side_size, :]
