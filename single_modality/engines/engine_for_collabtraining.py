@@ -166,7 +166,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             else:
                 loss_target = torch.tensor(0.)
 
-        loss = loss+loss_target+moco_loss
+        loss = loss+loss_target+(0.1*moco_loss)
         loss_value = loss.item()
         
         if not math.isfinite(loss_value):
@@ -212,6 +212,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(loss_target=loss_target.item())
         metric_logger.update(class_acc=class_acc)
         metric_logger.update(class_acc_target=class_acc_target)
+        metric_logger.update(moco_loss=moco_loss)
         metric_logger.update(loss_scale=loss_scale_value)
         min_lr = 10.
         max_lr = 0.
@@ -233,6 +234,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             log_writer.update(loss_target=loss_target.item(), head="loss")
             log_writer.update(class_acc=class_acc, head="loss")
             log_writer.update(class_acc_target=class_acc_target, head="loss")
+            log_writer.update(moco_loss=moco_loss, head="loss")
 
             log_writer.update(loss_scale=loss_scale_value, head="opt")
             log_writer.update(lr=max_lr, head="opt")
@@ -346,11 +348,11 @@ def merge(eval_path, num_tasks):
         lines = open(file, 'r').readlines()[1:]
         for line in lines:
             line = line.strip()
-            name = line.split('[')[0]
-            label = line.split(']')[1].split(' ')[1]
-            chunk_nb = line.split(']')[1].split(' ')[2]
-            split_nb = line.split(']')[1].split(' ')[3]
-            data = np.fromstring(line.split('[')[1].split(']')[0], dtype=np.float, sep=',')
+            name = line.split(' ')[0]
+            label = line.split(']')[-1].split(' ')[1]
+            chunk_nb = line.split(']')[-1].split(' ')[2]
+            split_nb = line.split(']')[-1].split(' ')[3]
+            data = np.fromstring(' '.join(line.split()[1:]).split('[')[1].split(']')[0], dtype=np.float, sep=',')
             data = softmax(data)
             if not name in dict_feats:
                 dict_feats[name] = []
