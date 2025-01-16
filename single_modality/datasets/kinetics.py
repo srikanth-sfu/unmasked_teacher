@@ -271,20 +271,19 @@ class VideoClsDataset(Dataset):
             # handle temporal segments
             converted_len = int(self.clip_len * self.frame_sample_rate)
             seg_len = len(vr) // self.num_segment
-            print(self.num_segment, self.test_num_segment)
-            os._exit(1)
 
-            # if self.mode == 'test':
-            #     temporal_step = max(1.0 * (len(vr) - converted_len) / (self.test_num_segment - 1), 0)
-            #     temporal_start = int(chunk_nb * temporal_step)
+            if self.mode == 'test':
+                temporal_step = max(1.0 * (len(vr) - converted_len) / (self.test_num_segment - 1), 0)
+                temporal_start = int(chunk_nb * temporal_step)
 
-            #     bound = min(temporal_start + converted_len, len(vr))
-            #     all_index = [x for x in range(temporal_start, bound, self.frame_sample_rate)]
-            #     while len(all_index) < self.clip_len:
-            #         all_index.append(all_index[-1])
-            #     vr.seek(0)
-            #     buffer = vr.get_batch(all_index).asnumpy()
-            #     return buffer
+                bound = min(temporal_start + converted_len, len(vr))
+                #all_index = [x for x in range(temporal_start, bound, self.frame_sample_rate)]
+                all_index = [x for x in range(temporal_start, bound, self.clip_len)]
+                while len(all_index) < self.clip_len:
+                    all_index.append(all_index[-1])
+                vr.seek(0)
+                buffer = vr.get_batch(all_index).asnumpy()
+                return buffer
 
             all_index = []
             for i in range(self.num_segment):
