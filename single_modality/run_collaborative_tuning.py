@@ -666,7 +666,7 @@ def main(args, ds_init):
         if global_rank == 0:
             print("Start merging results...")
             top1 ,top5 = merge(args.output_dir, num_tasks)
-            print(f"Accuracy of the network on the {len(dataset_test)} test videos: Top-1: {final_top1:.2f}%, Top-5: {final_top5:.2f}%")
+            print(f"Accuracy of the network on the {len(dataset_test)} test videos: Top-1: {top1:.2f}%, Top-5: {top5:.2f}%")
             log_stats.update({'multicrop-top-1': top1,'multicrop-top-5': top5})
             if log_writer is not None:
                 log_writer.update(multicrop_top_1=top1, multicrop_top_5=top5, head="perf", step=epoch)
