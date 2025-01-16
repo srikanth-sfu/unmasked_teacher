@@ -92,7 +92,8 @@ def build_dataset(is_train, test_mode, args, ds=None):
             mode = 'train'
             anno_path = os.path.join(args.data_path, args.train_anno_path)
             args.anno_path_target = os.path.join(args.data_path, args.train_anno_path)
-            args.video_ext_target = ".avi"
+            args.video_ext_target = ".avi" if args.train_anno_path.startswith("ucf101") else ".mp4"
+            print(args.video_ext)
             func = VideoClsColabDataset
         else:  
             mode = 'validation'
