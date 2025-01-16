@@ -160,10 +160,9 @@ class VideoClsDataset(Dataset):
 
             print(buffer.shape)
             buffer = self.data_resize(buffer)
-            print(buffer.shape)
             if isinstance(buffer, list):
                 buffer = np.stack(buffer, 0)
-
+            print(buffer.shape)
             if self.test_num_crop == 1:
                 spatial_step = 1.0 * (max(buffer.shape[1], buffer.shape[2]) - self.short_side_size) / 2
                 spatial_start = int(spatial_step)
