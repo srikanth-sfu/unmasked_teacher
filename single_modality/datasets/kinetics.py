@@ -83,6 +83,7 @@ class VideoClsDataset(Dataset):
         elif mode == 'test':
             self.data_resize = Compose([
                 Resize(size=(short_side_size), interpolation='bilinear'),
+                CenterCrop(size=(self.crop_size, self.crop_size)),
             ])
             self.data_transform = Compose([
                 ClipToTensor(),
@@ -292,8 +293,7 @@ class VideoClsDataset(Dataset):
                     index = np.clip(index, 0, seg_len - 1).astype(np.int64)
                 else:
                     if self.mode == 'validation':
-                        #end_idx = (seg_len - converted_len) // 2
-                        end_idx = np.random.randint(converted_len, seg_len)
+                        end_idx = (seg_len - converted_len) // 2
                     else:
                         end_idx = np.random.randint(converted_len, seg_len)
                     str_idx = end_idx - converted_len
