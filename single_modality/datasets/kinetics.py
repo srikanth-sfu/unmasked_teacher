@@ -148,6 +148,7 @@ class VideoClsDataset(Dataset):
             sample = self.test_dataset[index]
             chunk_nb, split_nb = self.test_seg[index]
             buffer = self.loadvideo_decord(sample, chunk_nb=chunk_nb)
+            print(buffer.shape)
 
             while len(buffer) == 0:
                 warnings.warn("video {}, temporal {}, spatial {} not found during testing".format(\
@@ -168,7 +169,6 @@ class VideoClsDataset(Dataset):
                 spatial_step = 1.0 * (max(buffer.shape[1], buffer.shape[2]) - self.short_side_size) \
                                     / (self.test_num_crop - 1)
                 spatial_start = int(split_nb * spatial_step)
-            print(spatial_start,spatial_start + self.short_side_size, self.short_side_size)
             if buffer.shape[1] >= buffer.shape[2]:
                 buffer = buffer[:, spatial_start:spatial_start + self.short_side_size, :, :]
             else:
