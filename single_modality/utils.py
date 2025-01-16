@@ -578,11 +578,15 @@ def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_sca
         model.save_checkpoint(save_dir=args.output_dir, tag="checkpoint-%s" % model_name, client_state=client_state)
 
 
-def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, model_ema=None):
+def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, model_ema=None, test_best=False):
     output_dir = Path(args.output_dir)
     if loss_scaler is not None:
         # torch.amp
-        if os.path.exists(os.path.join(output_dir, 'checkpoint-latest.pth')):
+        if test_best:
+            args.resume = os.path.join(output_dir, 'checkpoint-best.pth')
+            print("Auto resume checkpoint for test best: %s" % args.resume)
+
+        elif os.path.exists(os.path.join(output_dir, 'checkpoint-latest.pth')):
             args.resume = os.path.join(output_dir, 'checkpoint-latest.pth')
             print("Auto resume checkpoint: %s" % args.resume)
         elif args.auto_resume and len(args.resume) == 0:
