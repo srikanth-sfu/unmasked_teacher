@@ -2,13 +2,13 @@ export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
 MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/src_finetune/baseline_b16_ucf_hmdb_f8_res224/'
-JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
+JOB_NAME='tubeletumt_s3_b16_ucf_hmdb_f8_res224'
 OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt_tubelet/colabtrainonly/$JOB_NAME"
 PREFIX="/storage/smuralidharan/data/ucf_hmdb/"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/'
 
-python -m torch.distributed.launch --nproc_per_node 1 run_collaborative_tuning.py \
+python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.py \
         --model vit_base_patch16_224 \
         --data_path ${DATA_PATH} \
         --prefix ${PREFIX} \
