@@ -643,8 +643,6 @@ def main(args, ds_init):
             
             if max_accuracy_src < test_stats_src["acc1"]:
                 max_accuracy_src = test_stats_src["acc1"]
-            print(f'Max accuracy -- src val: {max_accuracy_src:.2f}%')
-            print(f'Max accuracy -- tgt val: {max_accuracy_tgt:.2f}%')
             if log_writer is not None:
                 log_writer.update(val_acc1_src=test_stats_src['acc1'], head="perf", step=epoch)
                 log_writer.update(val_acc5_src=test_stats_src['acc5'], head="perf", step=epoch)
@@ -663,10 +661,6 @@ def main(args, ds_init):
                          'epoch': epoch,
                          'n_parameters': n_parameters}
         preds_file = os.path.join(args.output_dir, str(global_rank) + '.txt')
-        if args.test_best:
-            utils.auto_load_model(
-                args=args, model=model, model_without_ddp=model_without_ddp,
-                optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema, test_best=True)
         torch.distributed.barrier()
         if global_rank == 0:
             print("Start merging results...")
@@ -685,6 +679,8 @@ def main(args, ds_init):
                         args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
                         loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema,
                         max_accuracy_src=max_accuracy_src, max_accuracy_tgt=max_accuracy_tgt)
+        print(f'Max accuracy -- src val: {max_accuracy_src:.2f}%')
+        print(f'Max accuracy -- tgt val: {max_accuracy_tgt:.2f}%')
 
         if args.output_dir and args.save_ckpt:
             if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:
