@@ -83,7 +83,6 @@ class VideoClsDataset(Dataset):
         elif mode == 'test':
             self.data_resize = Compose([
                 Resize(size=(short_side_size), interpolation='bilinear'),
-                CenterCrop(size=(self.crop_size, self.crop_size)),
             ])
             self.data_transform = Compose([
                 ClipToTensor(),
