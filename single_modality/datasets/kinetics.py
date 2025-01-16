@@ -161,7 +161,6 @@ class VideoClsDataset(Dataset):
             buffer = self.data_resize(buffer)
             if isinstance(buffer, list):
                 buffer = np.stack(buffer, 0)
-            print(buffer.shape)
             if self.test_num_crop == 1:
                 spatial_step = 1.0 * (max(buffer.shape[1], buffer.shape[2]) - self.short_side_size) / 2
                 spatial_start = int(spatial_step)
@@ -270,6 +269,8 @@ class VideoClsDataset(Dataset):
                                     num_threads=1, ctx=cpu(0))
 
             # handle temporal segments
+            if random.random() < 0.03:
+                print(self.clip_len, self.frame_sample_rate)
             converted_len = int(self.clip_len * self.frame_sample_rate)
             seg_len = len(vr) // self.num_segment
 
