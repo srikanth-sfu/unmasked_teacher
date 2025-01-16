@@ -83,18 +83,27 @@ def build_dataset(is_train, test_mode, args, ds=None):
     if ds == 'ucf_hmdb':
         mode = None
         anno_path = None
-        if is_train is True:
+        if test_mode:
+            mode = 'test'
+            anno_path = os.path.join(args.data_path, args.test_anno_path)
+            args.video_ext = ".avi" if args.test_anno_path.startswith("hmdb51") else '.mp4'
+            func = VideoClsDataset
+        elif is_train is True:
             mode = 'train'
-            anno_path = os.path.join(args.data_path, 'ucf101_train_hmdb_ucf.csv')
-            args.anno_path_target = os.path.join(args.data_path, 'hmdb51_train_hmdb_ucf.csv')
+            anno_path = os.path.join(args.data_path, args.train_anno_path)
+            args.anno_path_target = os.path.join(args.data_path, args.train_anno_path)
             args.video_ext_target = ".avi"
             func = VideoClsColabDataset
         else:  
             mode = 'validation'
-            anno_path = os.path.join(args.data_path, 'ucf101_val_hmdb_ucf.csv')
+            anno_list = ['ucf101_val_hmdb_ucf.csv','hmdb51_val_hmdb_ucf.csv']
+            if args.train_anno_path.startswith("hmdb51"):
+                anno_list = anno_list[::-1]
+            anno_path = os.path.join(args.data_path, anno_list[args.ds_id])
             func = VideoClsDataset
+            args.video_ext = ".avi" if anno_list[args.ds_id].startswith("hmdb51") else '.mp4'
         args.clip_label_embedding = np.load("video_splits/ucf_hmdb_classnames.npy")
-
+        
         dataset = func(
             anno_path=anno_path,
             prefix=args.prefix,
@@ -103,38 +112,6 @@ def build_dataset(is_train, test_mode, args, ds=None):
             clip_len=args.num_frames,
             frame_sample_rate=args.sampling_rate,
             num_segment=1,
-            test_num_segment=args.test_num_segment,
-            test_num_crop=args.test_num_crop,
-            num_crop=1 if not test_mode else 3,
-            keep_aspect_ratio=True,
-            crop_size=args.input_size,
-            short_side_size=args.short_side_size,
-            new_height=256,
-            new_width=320,
-            args=args)
-        nb_classes = args.nb_classes
-    elif ds == 'hmdb_ucf':
-        mode = None
-        anno_path = None
-        if is_train is True:
-            mode = 'train'
-            anno_path = os.path.join(args.data_path, 'hmdb51_train_hmdb_ucf.csv')
-            func = VideoClsColabDataset
-        else:  
-            mode = 'validation'
-            anno_path = os.path.join(args.data_path, 'hmdb51_val_hmdb_ucf.csv')
-            func = VideoClsDataset
-        args.clip_label_embedding = np.load("video_splits/ucf_hmdb_classnames.npy")
-
-        dataset = func(
-            anno_path=anno_path,
-            prefix=args.prefix,
-            split=args.split,
-            mode=mode,
-            clip_len=args.num_frames,
-            frame_sample_rate=args.sampling_rate,
-            num_segment=1,
-            video_ext='.avi',
             test_num_segment=args.test_num_segment,
             test_num_crop=args.test_num_crop,
             num_crop=1 if not test_mode else 3,
@@ -297,8 +274,8 @@ def build_dataset(is_train, test_mode, args, ds=None):
 
 def build_dataset_colab(is_train, test_mode, target=None, args=None):
     if not is_train:
-        ds = args.data_set if not target else args.data_set_target
-        args.ds_id = 0 if not target else 1
+        ds = args.data_set
+        args.ds_id = target
     else:
         ds = args.data_set
     return build_dataset(is_train, test_mode, args, ds)
