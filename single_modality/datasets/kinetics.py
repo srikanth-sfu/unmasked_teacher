@@ -158,6 +158,7 @@ class VideoClsDataset(Dataset):
                 chunk_nb, split_nb = self.test_seg[index]
                 buffer = self.loadvideo_decord(sample, chunk_nb=chunk_nb)
 
+            print(buffer.shape)
             buffer = self.data_resize(buffer)
             print(buffer.shape)
             if isinstance(buffer, list):
