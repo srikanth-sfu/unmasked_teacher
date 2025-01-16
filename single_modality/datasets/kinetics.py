@@ -270,22 +270,20 @@ class VideoClsDataset(Dataset):
                                     num_threads=1, ctx=cpu(0))
 
             # handle temporal segments
-            if random.random() < 0.03:
-                print(self.clip_len, self.frame_sample_rate)
             converted_len = int(self.clip_len * self.frame_sample_rate)
             seg_len = len(vr) // self.num_segment
 
-            if self.mode == 'test':
-                temporal_step = max(1.0 * (len(vr) - converted_len) / (self.test_num_segment - 1), 0)
-                temporal_start = int(chunk_nb * temporal_step)
+            # if self.mode == 'test':
+            #     temporal_step = max(1.0 * (len(vr) - converted_len) / (self.test_num_segment - 1), 0)
+            #     temporal_start = int(chunk_nb * temporal_step)
 
-                bound = min(temporal_start + converted_len, len(vr))
-                all_index = [x for x in range(temporal_start, bound, self.frame_sample_rate)]
-                while len(all_index) < self.clip_len:
-                    all_index.append(all_index[-1])
-                vr.seek(0)
-                buffer = vr.get_batch(all_index).asnumpy()
-                return buffer
+            #     bound = min(temporal_start + converted_len, len(vr))
+            #     all_index = [x for x in range(temporal_start, bound, self.frame_sample_rate)]
+            #     while len(all_index) < self.clip_len:
+            #         all_index.append(all_index[-1])
+            #     vr.seek(0)
+            #     buffer = vr.get_batch(all_index).asnumpy()
+            #     return buffer
 
             all_index = []
             for i in range(self.num_segment):
@@ -294,7 +292,8 @@ class VideoClsDataset(Dataset):
                     index = np.concatenate((index, np.ones(self.clip_len - seg_len // self.frame_sample_rate) * seg_len))
                     index = np.clip(index, 0, seg_len - 1).astype(np.int64)
                 else:
-                    if self.mode == 'validation':
+                    #if self.mode == 'validation':
+                    if self.mode in ["validation", "test"]:
                         end_idx = (seg_len - converted_len) // 2
                     else:
                         end_idx = np.random.randint(converted_len, seg_len)
