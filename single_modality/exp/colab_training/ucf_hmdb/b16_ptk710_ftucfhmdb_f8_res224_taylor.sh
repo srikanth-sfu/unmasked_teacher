@@ -32,8 +32,8 @@ python -m torch.distributed.launch --nproc_per_node 1 run_collaborative_tuning.p
         --opt adamw \
         --opt_betas 0.9 0.999 \
         --weight_decay 0.05 \
-        --test_num_segment 1 \
-        --test_num_crop 1 \
+        --test_num_segment 4 \
+        --test_num_crop 3 \
         --dist_eval \
         --test_best \
         --data_set ucf_hmdb \
