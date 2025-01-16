@@ -44,7 +44,7 @@ class VideoClsDataset(Dataset):
         self.keep_aspect_ratio = keep_aspect_ratio
         self.num_segment = num_segment
         self.ds_id = args.ds_id
-        self.video_ext = video_ext
+        self.video_ext = args.video_ext
         self.test_num_segment = test_num_segment
         self.num_crop = num_crop
         self.test_num_crop = test_num_crop
@@ -169,6 +169,7 @@ class VideoClsDataset(Dataset):
                                     / (self.test_num_crop - 1)
                 spatial_start = int(split_nb * spatial_step)
             if buffer.shape[1] >= buffer.shape[2]:
+                print(spatial_start,spatial_start + self.short_side_size, self.short_side_size)
                 buffer = buffer[:, spatial_start:spatial_start + self.short_side_size, :, :]
             else:
                 buffer = buffer[:, :, spatial_start:spatial_start + self.short_side_size, :]
