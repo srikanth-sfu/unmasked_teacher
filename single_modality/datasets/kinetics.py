@@ -277,9 +277,7 @@ class VideoClsDataset(Dataset):
                 temporal_start = int(chunk_nb * temporal_step)
 
                 bound = min(temporal_start + converted_len, len(vr))
-                #all_index = [x for x in range(temporal_start, bound, self.frame_sample_rate)]
-                #all_index = [x for x in range(temporal_start, bound, self.clip_len)]
-                all_index = list(np.linspace(temporal_start, bound, num=self.clip_len))
+                all_index = [x for x in range(temporal_start, bound, self.frame_sample_rate)]
                 while len(all_index) < self.clip_len:
                     all_index.append(all_index[-1])
                 vr.seek(0)
@@ -294,7 +292,8 @@ class VideoClsDataset(Dataset):
                     index = np.clip(index, 0, seg_len - 1).astype(np.int64)
                 else:
                     if self.mode == 'validation':
-                        end_idx = (seg_len - converted_len) // 2
+                        #end_idx = (seg_len - converted_len) // 2
+                        end_idx = np.random.randint(converted_len, seg_len)
                     else:
                         end_idx = np.random.randint(converted_len, seg_len)
                     str_idx = end_idx - converted_len
