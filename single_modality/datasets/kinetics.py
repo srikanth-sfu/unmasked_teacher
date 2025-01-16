@@ -271,6 +271,8 @@ class VideoClsDataset(Dataset):
             # handle temporal segments
             converted_len = int(self.clip_len * self.frame_sample_rate)
             seg_len = len(vr) // self.num_segment
+            print(self.num_segment, self.test_num_segment)
+            os._exit(1)
 
             # if self.mode == 'test':
             #     temporal_step = max(1.0 * (len(vr) - converted_len) / (self.test_num_segment - 1), 0)
@@ -291,8 +293,7 @@ class VideoClsDataset(Dataset):
                     index = np.concatenate((index, np.ones(self.clip_len - seg_len // self.frame_sample_rate) * seg_len))
                     index = np.clip(index, 0, seg_len - 1).astype(np.int64)
                 else:
-                    #if self.mode == 'validation':
-                    if self.mode in ["validation", "test"]:
+                    if self.mode == 'validation':
                         end_idx = (seg_len - converted_len) // 2
                     else:
                         end_idx = np.random.randint(converted_len, seg_len)
