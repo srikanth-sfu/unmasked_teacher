@@ -661,6 +661,7 @@ def main(args, ds_init):
                          'epoch': epoch,
                          'n_parameters': n_parameters}
         preds_file = os.path.join(args.output_dir, str(global_rank) + '.txt')
+        test_stats = final_test(data_loader_test, model, device, preds_file)
         torch.distributed.barrier()
         if global_rank == 0:
             print("Start merging results...")
