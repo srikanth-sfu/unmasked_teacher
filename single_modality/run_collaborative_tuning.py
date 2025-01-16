@@ -689,7 +689,7 @@ def main(args, ds_init):
     if args.test_best:
         utils.auto_load_model(
             args=args, model=model, model_without_ddp=model_without_ddp,
-            optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema, test_best=False)
+            optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema, test_best=True)
         test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device)
     test_stats = final_test(data_loader_test, model, device, preds_file)
     torch.distributed.barrier()
