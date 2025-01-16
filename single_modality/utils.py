@@ -658,7 +658,7 @@ def load_model_colab(model_engine, model, output_dir, model_name, deepspeed=True
         pth = os.path.join(output_dir, "checkpoint-best.pth")
         print(f"Loading {pth} checkpoint for colab training")
     checkpoint = torch.load(pth)
-    model_state_dict = checkpoint.get("module", {})
+    model_state_dict = checkpoint['model']
     model.load_state_dict(model_state_dict, strict=strict)
     #_, client_states = model.load_checkpoint(output_dir, tag=f'{model_name}')
     if deepspeed:
