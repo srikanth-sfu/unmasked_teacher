@@ -17,7 +17,7 @@ from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
 from timm.utils import ModelEma
 from optim_factory import create_optimizer, get_parameter_groups, LayerDecayValueAssigner
 
-from datasets import build_dataset_colab
+from datasets import build_dataset_colab, build_dataset
 from engines.engine_for_collabtraining import train_one_epoch, validation_one_epoch, final_test, merge
 from utils import NativeScalerWithGradNormCount as NativeScaler
 from utils import multiple_samples_collate
@@ -203,6 +203,12 @@ def get_args():
         'mitv1_sparse', 'ucf_hmdb', 'hmdb_ucf'
         ], type=str, help='dataset')
     parser.add_argument("--tubelet-config", default="", type=str)
+    parser.add_argument("--train_anno_path", default="", type=str)
+    parser.add_argument("--train_anno_path_target", default="", type=str)
+    parser.add_argument("--test_anno_path", default="", type=str)
+
+
+
 
     parser.add_argument('--num_segments', type=int, default=1)
     parser.add_argument('--num_frames', type=int, default=16)
@@ -341,8 +347,7 @@ def main(args, ds_init):
     else:
         dataset_val_src, _ = build_dataset_colab(is_train=False, test_mode=False, target=False, args=args)
         dataset_val_tgt, _ = build_dataset_colab(is_train=False, test_mode=False, target=True, args=args)
-    #dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
-    dataset_test = None
+    dataset_test, _ = build_dataset_colab(is_train=False, test_mode=True, target=True, args=args)
 
     num_tasks = utils.get_world_size()
     global_rank = utils.get_rank()
@@ -363,8 +368,8 @@ def main(args, ds_init):
             dataset_val_src, num_replicas=num_tasks, rank=global_rank, shuffle=False)
         sampler_val_tgt = torch.utils.data.DistributedSampler(
             dataset_val_tgt, num_replicas=num_tasks, rank=global_rank, shuffle=False)
-        # sampler_test = torch.utils.data.DistributedSampler(
-        #     dataset_test, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+        sampler_test = torch.utils.data.DistributedSampler(
+            dataset_test, num_replicas=num_tasks, rank=global_rank, shuffle=False)
     else:
         sampler_val_src = torch.utils.data.SequentialSampler(dataset_val_src)
         sampler_val_tgt = torch.utils.data.SequentialSampler(dataset_val_tgt)
@@ -401,7 +406,8 @@ def main(args, ds_init):
         )
         data_loader_val_tgt = torch.utils.data.DataLoader(
             dataset_val_tgt, sampler=sampler_val_tgt,
-            batch_size=int(1.5 * args.batch_size),
+            #batch_size=int(1.5 * args.batch_size),
+            batch_size=1,
             num_workers=args.num_workers,
             pin_memory=args.pin_mem,
             drop_last=False,
@@ -413,7 +419,7 @@ def main(args, ds_init):
     if dataset_test is not None:
         data_loader_test = torch.utils.data.DataLoader(
             dataset_test, sampler=sampler_test,
-            batch_size=args.batch_size,
+            batch_size=1,
             num_workers=args.num_workers,
             pin_memory=args.pin_mem,
             drop_last=False,
@@ -611,7 +617,7 @@ def main(args, ds_init):
     start_time = time.time()
     max_accuracy_src, max_accuracy_tgt = args.max_accuracy_src, args.max_accuracy_tgt
     print("Max tgt accuracy", max_accuracy_tgt)
-    for epoch in range(args.start_epoch, args.epochs):
+    for epoch in range(args.start_epoch, args.epochs-1):
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
             
@@ -683,8 +689,9 @@ def main(args, ds_init):
     if args.test_best:
         utils.auto_load_model(
             args=args, model=model, model_without_ddp=model_without_ddp,
-            optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)
-    test_stats = final_test(data_loader_val_tgt, model, device, preds_file)
+            optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema, test_best=False)
+        test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device)
+    test_stats = final_test(data_loader_test, model, device, preds_file)
     torch.distributed.barrier()
     if global_rank == 0:
         print("Start merging results...")
