@@ -16,6 +16,7 @@ from .video_transforms import (
     horizontal_flip, random_short_side_scale_jitter, uniform_crop, 
 )
 from .volume_transforms import ClipToTensor
+import random
 
 try:
     from petrel_client.client import Client
