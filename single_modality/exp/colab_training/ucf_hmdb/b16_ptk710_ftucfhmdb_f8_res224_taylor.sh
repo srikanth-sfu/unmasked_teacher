@@ -8,7 +8,7 @@ PREFIX="/storage/smuralidharan/data/ucf_hmdb/"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/'
 
-python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.py \
+python -m torch.distributed.launch --nproc_per_node 1 run_collaborative_tuning.py \
         --model vit_base_patch16_224 \
         --data_path ${DATA_PATH} \
         --prefix ${PREFIX} \
@@ -32,12 +32,16 @@ python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.p
         --opt adamw \
         --opt_betas 0.9 0.999 \
         --weight_decay 0.05 \
-        --test_num_segment 4 \
-        --test_num_crop 3 \
+        --test_num_segment 1 \
+        --test_num_crop 1 \
         --dist_eval \
+        --test_best \
         --data_set ucf_hmdb \
         --data_set_target hmdb_ucf \
         --video_ext .mp4 \
         --split ',' \
         --mixup 0.0 \
-        --cutmix 0.0
+        --cutmix 0.0 \
+        --train_anno_path ucf101_train_hmdb_ucf.csv \
+        --train_anno_path_target hmdb51_train_hmdb_ucf.csv \
+        --test_anno_path hmdb51_val_hmdb_ucf.csv 
