@@ -80,7 +80,13 @@ class VideoClsColabDataset(Dataset):
             self.client = Client('~/petreloss.conf')
 
         if (mode == 'train'):
-            pass
+            self.target_transform = Compose([
+                Resize(self.short_side_size, interpolation='bilinear'),
+                CenterCrop(size=(self.crop_size, self.crop_size)),
+                ClipToTensor(),
+                Normalize(mean=[0.485, 0.456, 0.406],
+                                           std=[0.229, 0.224, 0.225])
+            ])
 
         elif (mode == 'validation'):
             self.data_transform = Compose([
@@ -155,8 +161,7 @@ class VideoClsColabDataset(Dataset):
                 return frame_list, frame_list, label_list, index_list, {}, label_target
             else:
                 buffer = self._aug_frame(buffer, args)
-                buffer_target = self._aug_frame(buffer_target, args)
-
+                buffer_target = self.target_transform(buffer_target)
             return buffer, buffer_target, self.label_array[index], index, {}, label_target
 
         elif self.mode == 'validation':
@@ -382,7 +387,6 @@ def spatial_sampling(
             max_scale].
         aspect_ratio (list): Aspect ratio range for resizing.
         scale (list): Scale range for resizing.
-        motion_shift (bool): Whether to apply motion shift for resizing.
     Returns:
         frames (tensor): spatially sampled frames.
     """
