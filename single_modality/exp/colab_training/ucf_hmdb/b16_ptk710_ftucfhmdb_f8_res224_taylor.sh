@@ -2,8 +2,8 @@ export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
 MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/src_finetune/baseline_b16_ucf_hmdb_f8_res224/'
-# JOB_NAME='tubeletumt_s3_b16_ucf_hmdb_f8_res224'
-JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
+JOB_NAME='tubeletumt_s3_b16_ucf_hmdb_f8_res224'
+#JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
 OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt_tubelet/colabtrainonly/$JOB_NAME"
 PREFIX="/storage/smuralidharan/data/ucf_hmdb/"
 LOG_DIR="./logs/${JOB_NAME}"
@@ -34,6 +34,7 @@ python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.p
         --opt_betas 0.9 0.999 \
         --weight_decay 0.05 \
         --test_num_segment 4 \
+        --num_segment 8 \
         --test_num_crop 3 \
         --dist_eval \
         --test_best \
