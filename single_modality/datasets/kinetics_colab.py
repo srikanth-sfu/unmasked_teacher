@@ -54,7 +54,7 @@ class VideoClsColabDataset(Dataset):
         self.video_ext_target = args.video_ext_target
         self.aug = False
         self.rand_erase = False
-        #assert num_segment == 1
+        assert num_segment == 1
         if self.mode in ['train']:
             self.aug = True
             if self.args.reprob > 0:
