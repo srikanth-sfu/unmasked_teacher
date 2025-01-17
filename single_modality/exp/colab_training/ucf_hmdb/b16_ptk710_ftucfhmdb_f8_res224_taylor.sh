@@ -34,7 +34,7 @@ python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.p
         --opt_betas 0.9 0.999 \
         --weight_decay 0.05 \
         --test_num_segment 4 \
-        --num_segment 8 \
+        --num_segments 8 \
         --test_num_crop 3 \
         --dist_eval \
         --test_best \
