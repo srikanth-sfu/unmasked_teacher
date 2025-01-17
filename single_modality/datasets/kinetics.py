@@ -273,13 +273,29 @@ class VideoClsDataset(Dataset):
             seg_len = len(vr) // self.num_segment
 
             if self.mode == 'test':
-                temporal_step = max(1.0 * (len(vr) - converted_len) / (self.test_num_segment - 1), 0)
-                temporal_start = int(chunk_nb * temporal_step)
+                # temporal_step = max(1.0 * (len(vr) - converted_len) / (self.test_num_segment - 1), 0)
+                # temporal_start = int(chunk_nb * temporal_step)
 
-                bound = min(temporal_start + converted_len, len(vr))
-                all_index = [x for x in range(temporal_start, bound, self.frame_sample_rate)]
-                while len(all_index) < self.clip_len:
-                    all_index.append(all_index[-1])
+                # bound = min(temporal_start + converted_len, len(vr))
+                # all_index = [x for x in range(temporal_start, bound, self.frame_sample_rate)]
+                # while len(all_index) < self.clip_len:
+                #     all_index.append(all_index[-1])
+                # vr.seek(0)
+                # buffer = vr.get_batch(all_index).asnumpy()
+                # return buffer
+                if seg_len <= converted_len:
+                    index = np.linspace(0, seg_len, num=seg_len // self.frame_sample_rate)
+                    index = np.concatenate((index, np.ones(self.clip_len - seg_len // self.frame_sample_rate) * seg_len))
+                    index = np.clip(index, 0, seg_len - 1).astype(np.int64)
+                else:
+                    end_idx = (seg_len - converted_len) // 2
+                str_idx = end_idx - converted_len
+                index = np.linspace(str_idx, end_idx, num=self.clip_len)
+                index = np.clip(index, str_idx, end_idx - 1).astype(np.int64)
+                index = index + i*seg_len
+                all_index.extend(list(index))
+
+                all_index = all_index[::int(sample_rate_scale)]
                 vr.seek(0)
                 buffer = vr.get_batch(all_index).asnumpy()
                 return buffer
