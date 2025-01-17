@@ -96,6 +96,7 @@ def build_dataset(is_train, test_mode, args, ds=None):
             func = VideoClsColabDataset
         else:  
             mode = 'validation'
+            args.num_segments = 1
             anno_list = ['ucf101_val_hmdb_ucf.csv','hmdb51_val_hmdb_ucf.csv']
             if args.train_anno_path.startswith("hmdb51"):
                 anno_list = anno_list[::-1]
