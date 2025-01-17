@@ -103,7 +103,7 @@ def build_dataset(is_train, test_mode, args, ds=None):
             func = VideoClsDataset
             args.video_ext = ".avi" if anno_list[args.ds_id].startswith("hmdb51") else '.mp4'
         args.clip_label_embedding = np.load("video_splits/ucf_hmdb_classnames.npy")
-        print("Num segment", args.num_segment)
+        print("Num segment", args.num_segments)
         dataset = func(
             anno_path=anno_path,
             prefix=args.prefix,
@@ -111,7 +111,7 @@ def build_dataset(is_train, test_mode, args, ds=None):
             mode=mode,
             clip_len=args.num_frames,
             frame_sample_rate=args.sampling_rate,
-            num_segment=args.num_segment,
+            num_segment=args.num_segments,
             test_num_segment=args.test_num_segment,
             test_num_crop=args.test_num_crop,
             num_crop=1 if not test_mode else 3,
