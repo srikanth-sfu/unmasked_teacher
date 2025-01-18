@@ -57,7 +57,6 @@ def get_args():
     parser.add_argument('--model_ema', action='store_true', default=False)
     parser.add_argument('--model_ema_decay', type=float, default=0.9999, help='')
     parser.add_argument('--model_ema_force_cpu', action='store_true', default=False, help='')
-    parser.add_argument('--video_ext', default=".mp4", help='video ext')
     
 
     # Optimizer parameters
@@ -205,7 +204,12 @@ def get_args():
     parser.add_argument("--tubelet-config", default="", type=str)
     parser.add_argument("--train_anno_path", default="", type=str)
     parser.add_argument("--train_anno_path_target", default="", type=str)
+    parser.add_argument("--val_anno_path", default="", type=str)
+    parser.add_argument("--val_anno_path_target", default="", type=str)
     parser.add_argument("--test_anno_path", default="", type=str)
+    parser.add_argument("--clip_embed", default="", type=str)
+    parser.add_argument("--video_ext", default="", type=str)
+    parser.add_argument("--video_ext_target", default="", type=str)
 
 
 

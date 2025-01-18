@@ -37,7 +37,7 @@ class MoCo(nn.Module, TrainStepMixin):
     def __init__(self,
                  model,
                  in_channels: int,
-                 queue_size: int = 400,
+                 queue_size: int = 2048,
                  momentum: float = 0.999,
                  temperature: float = 0.07):
         super(MoCo, self).__init__()

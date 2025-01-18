@@ -81,29 +81,24 @@ def build_dataset(is_train, test_mode, args, ds=None):
         ds = args.data_set
     print(f'Use Dataset: {ds}', is_train)
     if ds == 'ucf_hmdb':
-        mode = None
-        anno_path = None
         if test_mode:
             mode = 'test'
             anno_path = os.path.join(args.data_path, args.test_anno_path)
-            args.video_ext = ".avi" if args.test_anno_path.startswith("hmdb51") else '.mp4'
+            args.video_ext = args.video_ext_target
             func = VideoClsDataset
         elif is_train is True:
             mode = 'train'
             anno_path = os.path.join(args.data_path, args.train_anno_path)
             args.anno_path_target = os.path.join(args.data_path, args.train_anno_path_target)
-            args.video_ext_target = ".avi" if args.train_anno_path.startswith("ucf101") else ".mp4"
             func = VideoClsColabDataset
         else:  
             mode = 'validation'
             args.num_segments = 1
-            anno_list = ['ucf101_val_hmdb_ucf.csv','hmdb51_val_hmdb_ucf.csv']
-            if args.train_anno_path.startswith("hmdb51"):
-                anno_list = anno_list[::-1]
-            anno_path = os.path.join(args.data_path, anno_list[args.ds_id])
+            split = args.val_anno_path if not args.ds_id else args.val_anno_path_target
+            anno_path = os.path.join(args.data_path, split)
             func = VideoClsDataset
-            args.video_ext = ".avi" if anno_list[args.ds_id].startswith("hmdb51") else '.mp4'
-        args.clip_label_embedding = np.load("video_splits/ucf_hmdb_classnames.npy")
+            args.video_ext = args.video_ext_target if args.ds_id else args.video_ext
+        args.clip_label_embedding = np.load(args.clip_embed)
         print("Num segment", args.num_segments)
         dataset = func(
             anno_path=anno_path,
@@ -275,8 +270,6 @@ def build_dataset(is_train, test_mode, args, ds=None):
 
 def build_dataset_colab(is_train, test_mode, target=None, args=None):
     if not is_train:
-        ds = args.data_set
         args.ds_id = target
-    else:
-        ds = args.data_set
+    ds = args.data_set
     return build_dataset(is_train, test_mode, args, ds)
