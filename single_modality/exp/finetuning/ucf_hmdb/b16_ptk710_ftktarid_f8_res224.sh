@@ -1,8 +1,8 @@
 export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
-MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/pretrain/baseline_b16_ucf_hmdb/checkpoint-49.pth'
-JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
+MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/pretrain/baseline_b16_arid/checkpoint-49.pth'
+JOB_NAME='baseline_b16_ktarid_f8_res224'
 OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt/src_finetune/$JOB_NAME"
 PREFIX="${SLURM_TMPDIR}/data/ucf_hmdb/"
 LOG_DIR="./logs/${JOB_NAME}"
@@ -40,8 +40,6 @@ python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --split ',' \
         --mixup 0.0 \
         --cutmix 0.0 \
-        --train_split_src 'ucf101_train_hmdb_ucf.csv' \
-        --val_split_src 'ucf101_val_hmdb_ucf.csv' \
+        --train_split_src 'video_splits/kinetics600_dailyda_train.csv' \
+        --val_split_src 'kinetics600_dailyda_val.csv' \
         --clip_labels 'video_splits/ucf_hmdb_classnames.npy'
-
-
