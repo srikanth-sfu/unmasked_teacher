@@ -18,7 +18,7 @@ from timm.utils import ModelEma
 from optim_factory import create_optimizer, get_parameter_groups, LayerDecayValueAssigner
 
 from datasets import build_dataset_colab, build_dataset
-from engines.engine_for_collabtraining import train_one_epoch, validation_one_epoch, final_test, merge
+from engines.engine_for_collabtraining import train_one_epoch, validation_one_epoch, validation_one_epoch_teacher, final_test, merge
 from utils import NativeScalerWithGradNormCount as NativeScaler
 from utils import multiple_samples_collate
 from utils import LabelSmoothingCrossEntropyNoReduction
@@ -26,6 +26,7 @@ from models import *
 import utils
 from tubelets import build_transform
 from moco import MoCo
+import clip
 
 def get_args():
     parser = argparse.ArgumentParser('VideoMAE fine-tuning and evaluation script for video classification', add_help=False)
@@ -411,7 +412,7 @@ def main(args, ds_init):
         data_loader_val_tgt = torch.utils.data.DataLoader(
             dataset_val_tgt, sampler=sampler_val_tgt,
             #batch_size=int(1.5 * args.batch_size),
-            batch_size=4,
+            batch_size=1,
             num_workers=args.num_workers,
             pin_memory=args.pin_mem,
             drop_last=False,
@@ -622,6 +623,10 @@ def main(args, ds_init):
     max_accuracy_src, max_accuracy_tgt = args.max_accuracy_src, args.max_accuracy_tgt
     print("Max tgt accuracy", max_accuracy_tgt)
     for epoch in range(args.start_epoch, args.epochs-1):
+        teacher_model, _ = clip.load('ViT-B/32', 'cuda')
+        test_stats_tgt = validation_one_epoch_teacher(data_loader_val_tgt, teacher_model, device, args.clip_label_embedding)
+        test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device)
+        os._exit(1)
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
             

@@ -247,6 +247,47 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
     metric_logger.synchronize_between_processes()
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
+    
+@torch.no_grad()
+def validation_one_epoch_teacher(data_loader, model, device, label_file, fp32=False):
+    criterion = torch.nn.CrossEntropyLoss()
+    clip_label_embedding = torch.from_numpy(label_file).to(device, non_blocking=True)
+
+    metric_logger = utils.MetricLogger(delimiter="  ")
+    header = 'Val:'
+
+    # switch to evaluation mode
+    model.eval()
+
+    for batch in metric_logger.log_every(data_loader, 10, header):
+        videos = batch[0]
+        target = batch[1]
+        videos = videos.to(device, non_blocking=True)
+        target = target.to(device, non_blocking=True)
+
+        # compute output
+        with torch.cuda.amp.autocast():
+            B, C, T, H, W = videos.shape
+            #norm_clip, _ = model(videos)
+            norm_clip = model.encode_image(videos.permute(0,2,1,3,4).view(-1, C, H, W))
+            norm_clip = norm_clip/norm_clip.norm(dim=1, keepdim=True)
+            norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)
+            output = (norm_clip @ clip_label_embedding.T)
+            output = (100.*output).mean(dim=1)
+            loss = criterion(output, target)
+
+        acc1, acc5 = accuracy(output, target, topk=(1, 5))
+
+        batch_size = videos.shape[0]
+        metric_logger.update(loss=loss.item())
+        metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
+        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+    # gather the stats from all processes
+    metric_logger.synchronize_between_processes()
+    print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
+          .format(top1=metric_logger.acc1, top5=metric_logger.acc5, losses=metric_logger.loss))
+
+    return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 @torch.no_grad()
 def validation_one_epoch(data_loader, model, device, fp32=False):
