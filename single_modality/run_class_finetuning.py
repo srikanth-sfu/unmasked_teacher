@@ -76,7 +76,7 @@ def get_args():
 
     parser.add_argument('--lr', type=float, default=1e-3, metavar='LR',
                         help='learning rate (default: 1e-3)')
-    parser.add_argument('--layer_decay', type=float, default=0.75)
+    parser.add_argument('--layer_decay', type=float, default=0.65)
 
     parser.add_argument('--warmup_lr', type=float, default=1e-6, metavar='LR',
                         help='warmup learning rate (default: 1e-6)')
@@ -231,6 +231,7 @@ def get_args():
 def main(args, ds_init):
     
     utils.init_distributed_mode_new(args)
+    
 
     if ds_init is not None:
         utils.create_ds_config(args)
@@ -253,6 +254,14 @@ def main(args, ds_init):
     else:
         dataset_val, _ = build_dataset(is_train=False, test_mode=False, args=args)
     #dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
+    
+    total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
+    num_training_steps_per_epoch = len(dataset_train) // total_batch_size
+    if args.iterations > 0:
+        args.epochs = args.iterations // num_training_steps_per_epoch
+        args.epochs += 1
+        args.warmup_epochs = args.warmup_iterations // num_training_steps_per_epoch
+        args.warmup_epochs += 1
     dataset_test = None
 
     num_tasks = utils.get_world_size()
@@ -457,16 +466,9 @@ def main(args, ds_init):
     print("Model = %s" % str(model_without_ddp))
     print('number of params:', n_parameters)
 
-    total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
-    num_training_steps_per_epoch = len(dataset_train) // total_batch_size
-    if args.iterations > 0:
-        args.epochs = args.iterations // num_training_steps_per_epoch
-        args.epochs += 1
-        args.warmup_epochs = args.warmup_iterations // num_training_steps_per_epoch
-        args.warmup_epochs += 1
-    args.lr = args.lr * total_batch_size * args.num_sample / 256
-    args.min_lr = args.min_lr * total_batch_size * args.num_sample / 256
-    args.warmup_lr = args.warmup_lr * total_batch_size * args.num_sample / 256
+    #args.lr = args.lr * total_batch_size * args.num_sample #/ 256
+    #args.min_lr = args.min_lr * total_batch_size * args.num_sample #/ 256
+    #args.warmup_lr = args.warmup_lr * total_batch_size * args.num_sample #/ 256
     print("LR = %.8f" % args.lr)
     print("Batch size = %d" % total_batch_size)
     print("Repeated sample = %d" % args.num_sample)
