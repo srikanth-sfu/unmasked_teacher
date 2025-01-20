@@ -42,4 +42,4 @@ python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --cutmix 0.0 \
         --train_split_src 'kinetics600_dailyda_train.csv' \
         --val_split_src 'kinetics600_dailyda_val.csv' \
-        --clip_labels 'video_splits/ucf_hmdb_classnames.npy'
+        --clip_labels 'video_splits/dailyda_classnames.npy'

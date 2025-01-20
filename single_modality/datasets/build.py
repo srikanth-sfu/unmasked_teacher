@@ -10,8 +10,11 @@ from .ssv2 import SSVideoClsDataset, SSRawFrameClsDataset
 
 class DataAugmentationForVideoMAE(object):
     def __init__(self, args):
-        self.input_mean = [0.485, 0.456, 0.406]  # IMAGENET_DEFAULT_MEAN
-        self.input_std = [0.229, 0.224, 0.225]  # IMAGENET_DEFAULT_STD
+        self.input_mean = [0.48145466, 0.4578275, 0.40821073]
+        self.input_std = [0.26862954, 0.26130258, 0.27577711]
+
+        #self.input_mean = [0.485, 0.456, 0.406]  # IMAGENET_DEFAULT_MEAN
+        #self.input_std = [0.229, 0.224, 0.225]  # IMAGENET_DEFAULT_STD
         normalize = GroupNormalize(self.input_mean, self.input_std)
         self.train_augmentation = GroupMultiScaleCrop(args.input_size, [1, .875, .75, .66])
         if args.color_jitter > 0:
