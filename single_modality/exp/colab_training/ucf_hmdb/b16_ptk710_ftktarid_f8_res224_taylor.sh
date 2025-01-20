@@ -1,4 +1,4 @@
-export MASTER_PORT=$((12000 + $RANDOM % 20000))
+export MASTER_PORT=$((12000 + $RANDOM % 21000))
 export OMP_NUM_THREADS=1
 
 MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/src_finetune/baseline_b16_ktarid_f8_res224/'
@@ -9,7 +9,7 @@ PREFIX="/storage/smuralidharan/data/"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/'
 
-python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.py \
+python -m torch.distributed.launch --nproc_per_node 4 --master-port=29501 run_collaborative_tuning.py \
         --model vit_base_patch16_224 \
         --data_path ${DATA_PATH} \
         --prefix ${PREFIX} \

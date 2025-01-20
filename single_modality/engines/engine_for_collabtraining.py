@@ -291,7 +291,7 @@ def validation_one_epoch_teacher(data_loader, model, device, label_file, fp32=Fa
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 @torch.no_grad()
-def validation_one_epoch(data_loader, model, device, tf1, fp32=False):
+def validation_one_epoch(data_loader, model, device, fp32=False):
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")

@@ -84,8 +84,9 @@ class VideoClsColabDataset(Dataset):
                 Resize(self.short_side_size, interpolation='bilinear'),
                 CenterCrop(size=(self.crop_size, self.crop_size)),
                 ClipToTensor(),
-                Normalize(mean=[0.485, 0.456, 0.406],
-                                           std=[0.229, 0.224, 0.225])
+                Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+#                Normalize(mean=[0.485, 0.456, 0.406],
+#                                           std=[0.229, 0.224, 0.225])
             ])
 
         elif (mode == 'validation'):
@@ -93,8 +94,9 @@ class VideoClsColabDataset(Dataset):
                 Resize(self.short_side_size, interpolation='bilinear'),
                 CenterCrop(size=(self.crop_size, self.crop_size)),
                 ClipToTensor(),
-                Normalize(mean=[0.485, 0.456, 0.406],
-                                           std=[0.229, 0.224, 0.225])
+                Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+#                Normalize(mean=[0.485, 0.456, 0.406],
+#                                           std=[0.229, 0.224, 0.225])
             ])
         elif mode == 'test':
             self.data_resize = Compose([
@@ -102,8 +104,9 @@ class VideoClsColabDataset(Dataset):
             ])
             self.data_transform = Compose([
                 ClipToTensor(),
-                Normalize(mean=[0.485, 0.456, 0.406],
-                                           std=[0.229, 0.224, 0.225])
+                Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+#                Normalize(mean=[0.485, 0.456, 0.406],
+#                                           std=[0.229, 0.224, 0.225])
             ])
             self.test_seg = []
             self.test_dataset = []
@@ -236,8 +239,13 @@ class VideoClsColabDataset(Dataset):
         
         # T H W C 
         buffer = tensor_normalize(
-            buffer, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+            buffer, [0.48145466, 0.4578275, 0.40821073], [0.26862954, 0.26130258, 0.27577711]
+
+            # buffer, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
         )
+#        buffer = tensor_normalize(
+#            buffer, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+#        )
         # T H W C -> C T H W.
         buffer = buffer.permute(3, 0, 1, 2)
         # Perform data augmentation.

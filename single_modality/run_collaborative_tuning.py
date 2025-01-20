@@ -622,11 +622,10 @@ def main(args, ds_init):
     start_time = time.time()
     max_accuracy_src, max_accuracy_tgt = args.max_accuracy_src, args.max_accuracy_tgt
     print("Max tgt accuracy", max_accuracy_tgt)
+    test_stats_tgt = validation_one_epoch_teacher(data_loader_val_tgt, teacher_model, device, args.clip_label_embedding)
+    test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device)
     for epoch in range(args.start_epoch, args.epochs-1):
         _, tf1 = clip.load('ViT-B/16', 'cuda')
-        test_stats_tgt = validation_one_epoch_teacher(data_loader_val_tgt, teacher_model, device, args.clip_label_embedding, tf1)
-        test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device, tf1)
-        os._exit(1)
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
             
