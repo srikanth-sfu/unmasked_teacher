@@ -211,11 +211,15 @@ class VideoClsDataset(Dataset):
         # T H W C -> C T H W.
         buffer = buffer.permute(3, 0, 1, 2)
         # Perform data augmentation.
+#        scl, asp = (
+#            [0.08, 1.0],
+#            [0.75, 1.3333],
+#        )
         scl, asp = (
-            [0.08, 1.0],
-            [0.75, 1.3333],
+            [1.0, 1.0],
+            [1.0, 1.0],
         )
-
+        
         buffer = spatial_sampling(
             buffer,
             spatial_idx=-1,
