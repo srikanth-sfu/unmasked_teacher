@@ -11,6 +11,7 @@ import utils
 from scipy.special import softmax
 import torch.nn as nn
 import torch.utils.checkpoint as checkpoint
+from PIL import Image
 
 def train_class_batch(model, samples, target, criterion):
     outputs = model(samples)
@@ -261,15 +262,15 @@ def validation_one_epoch_teacher(data_loader, model, device, label_file, fp32=Fa
 
     for batch in metric_logger.log_every(data_loader, 10, header):
         videos = batch[0]
+        B, C, T, H, W = videos.shape
         target = batch[1]
         videos = videos.to(device, non_blocking=True)
         target = target.to(device, non_blocking=True)
-
+        
         # compute output
         with torch.cuda.amp.autocast():
-            B, C, T, H, W = videos.shape
-            #norm_clip, _ = model(videos)
-            norm_clip = model.encode_image(videos.permute(0,2,1,3,4).view(-1, C, H, W))
+            norm_clip = []
+            norm_clip, _ = model(videos)
             norm_clip = norm_clip/norm_clip.norm(dim=1, keepdim=True)
             norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)
             output = (norm_clip @ clip_label_embedding.T)
@@ -290,7 +291,7 @@ def validation_one_epoch_teacher(data_loader, model, device, label_file, fp32=Fa
     return {k: meter.global_avg for k, meter in metric_logger.meters.items()}
 
 @torch.no_grad()
-def validation_one_epoch(data_loader, model, device, fp32=False):
+def validation_one_epoch(data_loader, model, device, tf1, fp32=False):
     criterion = torch.nn.CrossEntropyLoss()
 
     metric_logger = utils.MetricLogger(delimiter="  ")

@@ -77,8 +77,9 @@ class VideoClsDataset(Dataset):
                 Resize(self.short_side_size, interpolation='bilinear'),
                 CenterCrop(size=(self.crop_size, self.crop_size)),
                 ClipToTensor(),
-                Normalize(mean=[0.485, 0.456, 0.406],
-                                           std=[0.229, 0.224, 0.225])
+                Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+                #Normalize(mean=[0.485, 0.456, 0.406],
+                #                           std=[0.229, 0.224, 0.225])
             ])
         elif mode == 'test':
             self.data_resize = Compose([
@@ -86,8 +87,9 @@ class VideoClsDataset(Dataset):
             ])
             self.data_transform = Compose([
                 ClipToTensor(),
-                Normalize(mean=[0.485, 0.456, 0.406],
-                                           std=[0.229, 0.224, 0.225])
+                Normalize((0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)),
+                #Normalize(mean=[0.485, 0.456, 0.406],
+                #                           std=[0.229, 0.224, 0.225])
             ])
             self.test_seg = []
             self.test_dataset = []
@@ -141,7 +143,8 @@ class VideoClsDataset(Dataset):
                     index = np.random.randint(self.__len__())
                     sample = self.dataset_samples[index]
                     buffer = self.loadvideo_decord(sample)
-            buffer = self.data_transform(buffer)
+
+            
             return buffer, self.label_array[index], sample.split("/")[-1].split(".")[0]
 
         elif self.mode == 'test':
@@ -203,7 +206,8 @@ class VideoClsDataset(Dataset):
         
         # T H W C 
         buffer = tensor_normalize(
-            buffer, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
+            buffer, (0.48145466, 0.4578275, 0.40821073), (0.26862954, 0.26130258, 0.27577711)
+            # buffer, [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
         )
         # T H W C -> C T H W.
         buffer = buffer.permute(3, 0, 1, 2)
