@@ -226,7 +226,7 @@ class VideoClsDataset(Dataset):
             min_scale=256,
             max_scale=320,
             crop_size=self.crop_size,
-            random_horizontal_flip=False if args.data_set == 'SSV2' else True ,
+            random_horizontal_flip=False if args.data_set == 'SSV2' else False ,
             inverse_uniform_sampling=False,
             aspect_ratio=asp,
             scale=scl,

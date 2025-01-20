@@ -165,6 +165,7 @@ def get_args():
         ], type=str, help='dataset')
     parser.add_argument('--train_split_src', default='', type=str, help='train split')
     parser.add_argument('--val_split_src', default='', type=str, help='val split')
+    parser.add_argument('--test_split_src', default='', type=str, help='test split')
     parser.add_argument('--clip_labels', default='', type=str, help='label embeddings')
     
     parser.add_argument('--num_segments', type=int, default=1)
@@ -253,7 +254,7 @@ def main(args, ds_init):
         dataset_val = None
     else:
         dataset_val, _ = build_dataset(is_train=False, test_mode=False, args=args)
-    #dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
+    dataset_test, _ = build_dataset(is_train=False, test_mode=True, args=args)
     
     total_batch_size = args.batch_size * args.update_freq * utils.get_world_size()
     num_training_steps_per_epoch = len(dataset_train) // total_batch_size
@@ -262,7 +263,7 @@ def main(args, ds_init):
         args.epochs += 1
         args.warmup_epochs = args.warmup_iterations // num_training_steps_per_epoch
         args.warmup_epochs += 1
-    dataset_test = None
+    #dataset_test = None
 
     num_tasks = utils.get_world_size()
     global_rank = utils.get_rank()
@@ -277,8 +278,8 @@ def main(args, ds_init):
                     'equal num of samples per-process.')
         sampler_val = torch.utils.data.DistributedSampler(
             dataset_val, num_replicas=num_tasks, rank=global_rank, shuffle=False)
-        # sampler_test = torch.utils.data.DistributedSampler(
-        #     dataset_test, num_replicas=num_tasks, rank=global_rank, shuffle=False)
+        sampler_test = torch.utils.data.DistributedSampler(
+            dataset_test, num_replicas=num_tasks, rank=global_rank, shuffle=False)
     else:
         sampler_val = torch.utils.data.SequentialSampler(dataset_val)
 
@@ -306,7 +307,7 @@ def main(args, ds_init):
     if dataset_val is not None:
         data_loader_val = torch.utils.data.DataLoader(
             dataset_val, sampler=sampler_val,
-            batch_size=int(1.5 * args.batch_size),
+            batch_size=1,
             num_workers=args.num_workers,
             pin_memory=args.pin_mem,
             drop_last=False,
@@ -318,7 +319,7 @@ def main(args, ds_init):
     if dataset_test is not None:
         data_loader_test = torch.utils.data.DataLoader(
             dataset_test, sampler=sampler_test,
-            batch_size=args.batch_size,
+            batch_size=4,
             num_workers=args.num_workers,
             pin_memory=args.pin_mem,
             drop_last=False,
@@ -479,6 +480,7 @@ def main(args, ds_init):
     num_layers = model_without_ddp.get_num_layers()
     if args.layer_decay < 1.0:
         assigner = LayerDecayValueAssigner(list(args.layer_decay ** (num_layers + 1 - i) for i in range(num_layers + 2)))
+        #assigner = LayerDecayValueAssigner(list(args.layer_decay for i in range(num_layers + 2)))
     else:
         assigner = None
 
@@ -612,8 +614,8 @@ def main(args, ds_init):
     if args.test_best:
         utils.auto_load_model(
             args=args, model=model, model_without_ddp=model_without_ddp,
-            optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema)
-    test_stats = final_test(data_loader_val, model, device, preds_file)
+            optimizer=optimizer, loss_scaler=loss_scaler, model_ema=model_ema, test_best=True)
+    test_stats = final_test(data_loader_test, model, device, preds_file)
     torch.distributed.barrier()
     if global_rank == 0:
         print("Start merging results...")

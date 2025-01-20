@@ -91,7 +91,11 @@ def build_dataset(is_train, test_mode, args):
             mode = 'train'
             anno_path = os.path.join(args.data_path, args.train_split_src) 
             func = VideoClsDataset
-        else:  
+        elif test_mode:
+            mode = 'test'
+            anno_path = os.path.join(args.data_path, args.test_split_src)
+            func = VideoClsDataset
+        else:
             mode = 'validation'
             anno_path = os.path.join(args.data_path, args.val_split_src)
             func = VideoClsDataset
