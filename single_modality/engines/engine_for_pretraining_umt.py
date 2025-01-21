@@ -42,8 +42,9 @@ def train_one_epoch(
                 if wd_schedule_values is not None and param_group["weight_decay"] > 0:
                     param_group["weight_decay"] = wd_schedule_values[it]
 
-        videos, bool_masked_pos = batch
-        feat_src_np, feat_tgt_np = videos.numpy(), copy.deepcopy(videos.numpy())
+        videos, bool_masked_pos, videos_raw = batch
+        print(videos_raw.shape)
+        feat_src_np, feat_tgt_np = videos_raw.numpy(), copy.deepcopy(videos_raw.numpy())
         np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
         

@@ -192,7 +192,7 @@ class VideoMAE(torch.utils.data.Dataset):
         else:
             process_data, mask = self.transform((images, None)) # T*C,H,W
             process_data = process_data.view((self.new_length, 3) + process_data.size()[-2:]).transpose(0, 1)  # T*C,H,W -> T,C,H,W -> C,T,H,W
-            return (process_data, mask)
+            return (process_data, mask, torch.from_numpy(np.stack(images)))
 
     def __len__(self):
         return len(self.clips)
