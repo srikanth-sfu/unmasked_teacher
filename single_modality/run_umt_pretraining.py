@@ -430,7 +430,7 @@ def main(args):
             clip_loss_ratio=args.clip_loss_ratio,
             mask_type=args.mask_type,
             mask_ratio=args.mask_ratio,
-            moco=moco, tubelet_params=tubelet_params
+            moco=moco, tubelet_params=tubelet_transform
         )
         if args.output_dir:
             if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:

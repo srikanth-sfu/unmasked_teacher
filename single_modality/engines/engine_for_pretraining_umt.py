@@ -52,7 +52,6 @@ def train_one_epoch(
         videos, bool_masked_pos, videos_raw = batch
         feat_src_np, feat_tgt_np = videos_raw.numpy(), copy.deepcopy(videos_raw.numpy())
         np.random.shuffle(feat_tgt_np)
-        print(type(feat_tgt_np))
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
         src_tubelet, tgt_tubelet = tubelet_pp(src_tubelet), tubelet_pp(tgt_tubelet)
         videos = videos.to(device, non_blocking=True)
