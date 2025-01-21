@@ -197,6 +197,8 @@ class VideoMAE(torch.utils.data.Dataset):
                 Resize(256, interpolation='bilinear'),
                 CenterCrop(size=(224, 224)),
             ])
+            print(type(images))
+            os._exit(1)
             raw_images = [data_transform(np.array(x)) for x in data_transform(images)]
             raw_images = torch.from_numpy(raw_images)
             print(process_data.shape, raw_images.shape)
