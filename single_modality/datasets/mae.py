@@ -193,12 +193,11 @@ class VideoMAE(torch.utils.data.Dataset):
         else:
             process_data, mask = self.transform((images, None)) # T*C,H,W
             process_data = process_data.view((self.new_length, 3) + process_data.size()[-2:]).transpose(0, 1)  # T*C,H,W -> T,C,H,W -> C,T,H,W
-            raw_images = torch.from_numpy(np.stack(images))
             data_transform = Compose([
                 Resize(self.short_side_size, interpolation='bilinear'),
                 CenterCrop(size=(self.crop_size, self.crop_size)),
             ])
-            raw_images = data_transform(raw_images)
+            raw_images = [data_transform(torch.numpy(x)) for x in data_transform(images)]
 
             return (process_data, mask, raw_images)
 
