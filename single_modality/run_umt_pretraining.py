@@ -16,6 +16,9 @@ from engines.engine_for_pretraining_umt import train_one_epoch
 from utils import NativeScalerWithGradNormCount as NativeScaler
 from utils import multiple_pretrain_samples_collate
 import utils
+from moco import MoCo
+
+from tubelets import build_transform
 from models import *
 from collections import OrderedDict
 
@@ -47,6 +50,7 @@ def get_args():
     parser.add_argument('--k710_weights', default='/home/ens/smuralidharan/checkpoints/umt/b16_ptk710_f8_res224.pth', type=str)
     parser.add_argument('--model_key', default='model|module', type=str)
     parser.add_argument('--model_prefix', default='', type=str)
+    parser.add_argument("--tubelet-config", default="", type=str)
 
 
     # CLIP decpder parameters
@@ -186,7 +190,47 @@ def main(args):
     utils.init_distributed_mode_new(args)
 
     print(args)
-
+    tubelet_params = [
+                dict(
+                    type='GroupToTensor',
+                    switch_rgb_channels=False,
+                    div255=True,
+                    mean=None,
+                    std=None
+                )
+    ]
+    if not args.tubelet_config:
+        print("Using default tubelet setting")
+        tubelet_params1=[
+                dict(
+                    type='Tubelets',
+                    region_sampler=dict(
+                        scales=[32, 48, 56, 64, 96, 128],
+                        ratios=[0.5, 0.67, 0.75, 1.0, 1.33, 1.50, 2.0],
+                        scale_jitter=0.18,
+                        num_rois=2,
+                    ),
+                    key_frame_probs=[0.5, 0.3, 0.2],
+                    loc_velocity=5,
+                    rot_velocity=6,
+                    shear_velocity=0.066,
+                    size_velocity=0.0001,
+                    label_prob=1.0,
+                    motion_type='gaussian',
+                    patch_transformation='rotation',
+                )
+            ]
+    else:
+        with(open(args.tubelet_config, 'r')) as tconfig:
+            tubelet_params1 = [json.load(tconfig)]
+        if args.model_root.endswith("/"):
+            args.model_root = args.model_root[:-1]
+        args.model_root += ("_" + os.path.basename(args.tubelet_config.split(".")[0])) + '/'
+    
+    tubelet_params = tubelet_params1 + tubelet_params
+    print(json.dumps(tubelet_params, indent=4))
+    
+    tubelet_transform = build_transform(tubelet_params)
     device = torch.device(args.device)
 
     # fix the seed for reproducibility
@@ -197,6 +241,10 @@ def main(args):
     cudnn.benchmark = True
 
     model = get_model(args)
+    moco_model = get_model(args)
+    for param in moco_model.parameters():
+        param.requires_grad = False
+    moco = MoCo(moco_model, args.clip_output_dim)
     patch_size = model.encoder.patch_embed.patch_size
     print("Patch size = %s" % str(patch_size))
     print("Tubelet size = %s" % str(args.tubelet_size))
@@ -339,10 +387,12 @@ def main(args):
 
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=False)
+        moco = torch.nn.parallel.DistributedDataParallel(moco, device_ids=[args.gpu], find_unused_parameters=True)
         model_without_ddp = model.module
+        moco_model_without_ddp = moco.module
         teacher_model = torch.nn.parallel.DistributedDataParallel(teacher_model, device_ids=[args.gpu], find_unused_parameters=False)
 
-    optimizer = create_optimizer(args, model_without_ddp)
+    optimizer = create_optimizer(args, model_without_ddp, additional_params=moco_model_without_ddp)
     loss_scaler = NativeScaler()
 
     print("Use step level LR & WD scheduler!")
@@ -378,6 +428,7 @@ def main(args):
             clip_loss_ratio=args.clip_loss_ratio,
             mask_type=args.mask_type,
             mask_ratio=args.mask_ratio,
+            moco=moco, tubelet_params=tubelet_params
         )
         if args.output_dir:
             if (epoch + 1) % args.save_ckpt_freq == 0 or epoch + 1 == args.epochs:

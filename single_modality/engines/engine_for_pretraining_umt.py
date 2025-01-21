@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import utils
 from einops import rearrange
+import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
 def train_one_epoch(
@@ -15,9 +16,10 @@ def train_one_epoch(
         lr_schedule_values=None, wd_schedule_values=None, 
         teacher_model=None, clip_input_resolution=224,
         clip_loss_type='l2', clip_loss_ratio=0.5,
-        mask_type='tube', mask_ratio=0.,
+        mask_type='tube', mask_ratio=0., moco=None, tubelet_params=None
     ):
     model.train()
+    moco.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     metric_logger.add_meter('min_lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -40,6 +42,9 @@ def train_one_epoch(
                     param_group["weight_decay"] = wd_schedule_values[it]
 
         videos, bool_masked_pos = batch
+        feat_src_np, feat_tgt_np = videos.numpy(), np.random.shuffle(videos.numpy())
+        src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
+        
         videos = videos.to(device, non_blocking=True)
         if mask_type in ['attention']:
             bool_masked_pos = None
@@ -87,6 +92,7 @@ def train_one_epoch(
 
         with torch.cuda.amp.autocast():
             outputs_clip = model(videos, bool_masked_pos)
+            moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
             loss_pixel = torch.zeros(1).type_as(outputs_clip).to(outputs_clip.device)
             # align CLIP
             if clip_loss_type == 'l2':
@@ -96,7 +102,7 @@ def train_one_epoch(
             else:
                 raise NotImplementedError
 
-        loss = loss_pixel + clip_loss_ratio * loss_clip
+        loss = loss_pixel + clip_loss_ratio * loss_clip + +(0.1*moco_loss)
         loss_value = loss.item()
 
         if not math.isfinite(loss_value):
@@ -107,12 +113,13 @@ def train_one_epoch(
         # this attribute is added by timm on one optimizer (adahessian)
         is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
         grad_norm = loss_scaler(loss, optimizer, clip_grad=max_norm,
-                                parameters=model.parameters(), create_graph=is_second_order)
+                                parameters=list(model.parameters())+list(moco.parameters()), create_graph=is_second_order)
         loss_scale_value = loss_scaler.state_dict()["scale"]
 
         torch.cuda.synchronize()
 
         metric_logger.update(loss=loss_value)
+        metric_logger.update(moco_loss=moco_loss.item())
         metric_logger.update(loss_pixel=loss_pixel.item())
         metric_logger.update(loss_clip=loss_clip.item())
         metric_logger.update(loss_scale=loss_scale_value)
