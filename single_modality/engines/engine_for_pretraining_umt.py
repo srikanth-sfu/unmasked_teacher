@@ -10,7 +10,6 @@ import copy
 import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from datasets.video_transforms import Compose, Normalize 
-from torchvision import transforms
 
 
 def train_one_epoch(
@@ -26,7 +25,6 @@ def train_one_epoch(
     moco.train()
     tubelet_pp = Compose(
             [
-                transforms.ToTensor(),
                 Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
                             std=[0.26862954, 0.26130258, 0.27577711])
             ]
@@ -56,6 +54,7 @@ def train_one_epoch(
         feat_src_np, feat_tgt_np = videos_raw.numpy(), copy.deepcopy(videos_raw.numpy())
         np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
+        print(type(src_tubelet))
         src_tubelet, tgt_tubelet = tubelet_pp(src_tubelet), tubelet_pp(tgt_tubelet)
         print(src_tubelet.shape, videos.shape)
         os._exit(1)
