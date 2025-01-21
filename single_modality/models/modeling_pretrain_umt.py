@@ -110,7 +110,10 @@ class PretrainVisionTransformerEncoder(nn.Module):
             x = x + self.pos_embed.type_as(x).to(x.device).clone().detach()
 
         B, _, C = x.shape
-        x_vis = x[~mask].reshape(B, -1, C) # ~mask means visible
+        if mask is not None:
+            x_vis = x[~mask].reshape(B, -1, C) # ~mask means visible
+        else:
+            x_vis = x
         x_clip_vis = []
 
         for idx, blk in enumerate(self.blocks):
@@ -125,7 +128,7 @@ class PretrainVisionTransformerEncoder(nn.Module):
         x_clip_vis = self.norm(torch.stack(x_clip_vis))
         return x_vis, x_clip_vis
 
-    def forward(self, x, mask):
+    def forward(self, x, mask=None):
         x, x_clip_vis = self.forward_features(x, mask)
         x = self.head(x)
         x_clip_vis = self.head(x_clip_vis)
@@ -252,10 +255,12 @@ class PretrainVisionTransformer(nn.Module):
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token', 'mask_token', 'clip_mask_token', 'clip_pos_embed'}
 
-    def forward(self, x, mask):
+    def forward(self, x, mask=None):
         x_clip_vis = self.encoder(x, mask) # [B, N_vis, C_e]
         
         # align CLIP
+        if mask is None:
+            return x_clip_vis
         K, B, _, C_CLIP = x_clip_vis.shape
         expand_clip_pos_embed = self.clip_pos_embed.repeat(B, 1, 1).type_as(x).to(x.device).clone().detach()
         clip_pos_emd_vis = expand_clip_pos_embed[~mask].view(B, -1, C_CLIP).unsqueeze(0).repeat(K, 1, 1, 1)
