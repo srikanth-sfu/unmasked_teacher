@@ -795,3 +795,45 @@ def transform_tubelet(vid1, vid2, fn):
     out_vid2 = out_vid2.reshape(orig_shape)#[:,::2]
     return out_vid1, out_vid2
 
+if __name__ == "__main__":
+    from tubelets import build_transform
+    import copy
+    tubelet_params = [
+                dict(
+                    type='GroupToTensor',
+                    switch_rgb_channels=False,
+                    div255=True,
+                    mean=None,
+                    std=None
+                )
+    ]
+
+    tubelet_params1=[
+            dict(
+                type='Tubelets',
+                region_sampler=dict(
+                    scales=[32, 48, 56, 64, 96, 128],
+                    ratios=[0.5, 0.67, 0.75, 1.0, 1.33, 1.50, 2.0],
+                    scale_jitter=0.18,
+                    num_rois=2,
+                ),
+                key_frame_probs=[0.5, 0.3, 0.2],
+                loc_velocity=5,
+                rot_velocity=6,
+                shear_velocity=0.066,
+                size_velocity=0.0001,
+                label_prob=1.0,
+                motion_type='gaussian',
+                patch_transformation='rotation',
+            )
+        ]
+    
+    tubelet_params = tubelet_params1 + tubelet_params
+    print(json.dumps(tubelet_params, indent=4))
+    
+    tubelet_transform = build_transform(tubelet_params)
+    in_video = np.random.rand(6,3,8,224,224)
+    in_video = (in_video*255.0).astype("uint8")
+    out_video = copy.deepcopy(in_video)
+    np.random.shuffle(out_video)
+    transform_tubelet(in_video, out_video, tubelet_transform)
