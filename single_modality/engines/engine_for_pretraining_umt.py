@@ -6,6 +6,7 @@ import torch
 import torch.nn as nn
 import utils
 from einops import rearrange
+import copy
 import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 
@@ -42,10 +43,14 @@ def train_one_epoch(
                     param_group["weight_decay"] = wd_schedule_values[it]
 
         videos, bool_masked_pos = batch
-        feat_src_np, feat_tgt_np = videos.numpy(), np.random.shuffle(videos.numpy())
+        feat_src_np, feat_tgt_np = videos.numpy(), copy.deepcopy(videos.numpy())
+        np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
         
         videos = videos.to(device, non_blocking=True)
+        src_tubelet = src_tubelet.to(device, non_blocking=True)
+        tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
+
         if mask_type in ['attention']:
             bool_masked_pos = None
         else:
