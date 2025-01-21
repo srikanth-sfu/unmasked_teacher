@@ -82,28 +82,9 @@ class MoCo(nn.Module, TrainStepMixin):
         return x_gather[idx_this], idx_unshuffle
 
     @torch.no_grad()
-    def key_encoder_forward(self,clip_videos):
+    def key_encoder_forward(self,clip_videos,mask):
         model = self.key_encoder
-        x = model.patch_embed(clip_videos)
-        B, _, _ = x.size()
-
-        if model.pos_embed is not None:
-            x = x + model.pos_embed.expand(B, -1, -1).type_as(x).to(x.device).clone().detach()
-        B, _, C = x.shape    
-        x = model.pos_drop(x)
-
-        for idx, blk in enumerate(model.blocks):
-            if model.use_checkpoint and idx < model.checkpoint_num:
-                x = checkpoint.checkpoint(blk, x)
-            else:
-                x = blk(x)
-
-        x = model.norm(x)
-        if model.fc_norm is not None:
-            x = model.fc_norm(x.mean(1))
-        else:
-            x = x[:, 0]
-        return x
+        return model.module(clip_videos,mask)
 
     @torch.no_grad()
     def _batch_unshuffle_ddp(self, x, idx_unshuffle):
@@ -152,7 +133,7 @@ class MoCo(nn.Module, TrainStepMixin):
         self.queue_ptr[0] = ptr
 
 
-    def forward(self, model, q, k_in):
+    def forward(self, model, q, k_in, mask):
         with(torch.cuda.amp.autocast()):
             
             q = self.fc(q)
@@ -162,7 +143,7 @@ class MoCo(nn.Module, TrainStepMixin):
             with torch.no_grad():
                 self._momentum_update_key_encoder(backbone=model)
                 im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
-                tgt_tubelet = self.key_encoder_forward(im_k)
+                tgt_tubelet = self.key_encoder_forward(im_k, mask)
                 k = self.key_fc(tgt_tubelet)
                 k = nn.functional.normalize(k, dim=1)
                 k = self._batch_unshuffle_ddp(k, idx_unshuffle)
