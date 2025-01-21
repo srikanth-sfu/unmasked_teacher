@@ -775,8 +775,8 @@ def apply_transform(vid1, vid2, transform_fn):
     vid1 = vid_tensor[0:clip_len,:,:,:].permute(1, 0, 2, 3).contiguous()
     vid2 = vid_tensor[clip_len:,:,:,:].permute(1, 0, 2, 3).contiguous()
     
-    vid1.mul_(2).sub_(1)
-    vid2.mul_(2).sub_(1)
+    vid1.mul_(255)
+    vid2.mul_(255)
 
     return vid1, vid2
 
