@@ -48,15 +48,12 @@ def train_one_epoch(
         feat_src_np, feat_tgt_np = videos_raw.numpy(), copy.deepcopy(videos_raw.numpy())
         np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
-        print(src_tubelet.max(), src_tubelet.min(), src_tubelet.shape)
         mean = [0.48145466, 0.4578275, 0.40821073]
         std = [0.26862954, 0.26130258, 0.27577711]
         mean = torch.as_tensor(mean)
         std = torch.as_tensor(std)
         src_tubelet.sub_(mean[None, :, None, None, None]).div_(std[None, :, None, None, None])
         tgt_tubelet.sub_(mean[None, :, None, None, None]).div_(std[None, :, None, None, None])
-        print(src_tubelet.shape, videos.shape, src_tubelet.mean(), tgt_tubelet.mean())
-        os._exit(1)
         videos = videos.to(device, non_blocking=True)
         src_tubelet = src_tubelet.to(device, non_blocking=True)
         tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
