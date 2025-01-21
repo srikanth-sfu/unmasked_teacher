@@ -45,6 +45,9 @@ def train_one_epoch(
                     param_group["weight_decay"] = wd_schedule_values[it]
 
         videos, bool_masked_pos, videos_raw = batch
+        num_rows = 8
+        indices = torch.randint(0, videos_raw.size(0), (num_rows,))
+        videos_raw = videos_raw[indices]
         feat_src_np, feat_tgt_np = videos_raw.numpy(), copy.deepcopy(videos_raw.numpy())
         np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
@@ -104,8 +107,9 @@ def train_one_epoch(
 
         with torch.cuda.amp.autocast():
             outputs_clip = model(videos, bool_masked_pos)
-            src_tubelet = model(src_tubelet)
-            moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
+            unmasked = torch.zeros((src_tubelet.shape[0], bool_masked_pos.shape[-1])).type(torch.bool).to(device)
+            src_tubelet = model(src_tubelet, unmasked)
+            moco_loss = moco(model.module, src_tubelet, tgt_tubelet, unmasked)["nce_loss"].mean()
             loss_pixel = torch.zeros(1).type_as(outputs_clip).to(outputs_clip.device)
             # align CLIP
             if clip_loss_type == 'l2':
