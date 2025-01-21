@@ -9,6 +9,7 @@ from einops import rearrange
 import copy
 import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
+from datasets.video_transforms import Compose, Normalize 
 
 def train_one_epoch(
         model: torch.nn.Module, data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -21,6 +22,12 @@ def train_one_epoch(
     ):
     model.train()
     moco.train()
+    tubelet_pp = Compose(
+            [
+            Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
+                            std=[0.26862954, 0.26130258, 0.27577711])
+            ]
+    )
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     metric_logger.add_meter('min_lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -43,11 +50,10 @@ def train_one_epoch(
                     param_group["weight_decay"] = wd_schedule_values[it]
 
         videos, bool_masked_pos, videos_raw = batch
-        print(videos_raw.shape)
         feat_src_np, feat_tgt_np = videos_raw.numpy(), copy.deepcopy(videos_raw.numpy())
         np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
-        
+        src_tubelet, tgt_tubelet = tubelet_pp(src_tubelet), tubelet_pp(tgt_tubelet)
         videos = videos.to(device, non_blocking=True)
         src_tubelet = src_tubelet.to(device, non_blocking=True)
         tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
