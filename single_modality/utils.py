@@ -760,7 +760,8 @@ def multiple_pretrain_samples_collate(batch, fold=False):
 
 def prepare_tubelet_inputs(vid):
     #data2 = (((data1 + 1) * 255) / 2).astype('uint8')
-    return [(((np.squeeze(x, axis=0)+1)*255)/2).astype('uint8') for x in np.split(vid, vid.shape[0], axis=0)]
+    # return [(((np.squeeze(x, axis=0)+1)*255)/2).astype('uint8') for x in np.split(vid, vid.shape[0], axis=0)]
+    return np.split(vid, vid.shape[0], axis=0)
 
 def apply_transform(vid1, vid2, transform_fn):
     vid1 = [np.squeeze(x, axis=1).transpose(1,2,0) for x in np.split(vid1, vid1.shape[1], axis=1)]
