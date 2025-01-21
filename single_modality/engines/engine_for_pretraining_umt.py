@@ -57,7 +57,7 @@ def train_one_epoch(
         np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
         src_tubelet, tgt_tubelet = tubelet_pp(src_tubelet), tubelet_pp(tgt_tubelet)
-        print(src_tubelet.shape)
+        print(src_tubelet.shape, videos.shape)
         os._exit(1)
         videos = videos.to(device, non_blocking=True)
         src_tubelet = src_tubelet.to(device, non_blocking=True)
