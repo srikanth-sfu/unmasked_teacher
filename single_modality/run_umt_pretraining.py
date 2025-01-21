@@ -368,7 +368,9 @@ def main(args):
 
     model.to(device)
     teacher_model.to(device)
+    moco.to(device)
     model_without_ddp = model
+    moco_model_without_ddp = moco
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
     print("Model = %s" % str(model_without_ddp))
