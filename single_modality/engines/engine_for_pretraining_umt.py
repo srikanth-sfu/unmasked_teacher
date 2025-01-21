@@ -10,6 +10,8 @@ import copy
 import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from datasets.video_transforms import Compose, Normalize 
+from torchvision import transforms
+
 
 def train_one_epoch(
         model: torch.nn.Module, data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -24,7 +26,8 @@ def train_one_epoch(
     moco.train()
     tubelet_pp = Compose(
             [
-            Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
+                transforms.ToTensor(),
+                Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
                             std=[0.26862954, 0.26130258, 0.27577711])
             ]
     )
