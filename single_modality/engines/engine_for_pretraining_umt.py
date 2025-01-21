@@ -104,6 +104,7 @@ def train_one_epoch(
 
         with torch.cuda.amp.autocast():
             outputs_clip = model(videos, bool_masked_pos)
+            src_tubelet = model(src_tubelet)
             moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
             loss_pixel = torch.zeros(1).type_as(outputs_clip).to(outputs_clip.device)
             # align CLIP
