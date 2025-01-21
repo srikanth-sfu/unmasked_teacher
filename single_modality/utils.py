@@ -16,7 +16,46 @@ from torch import inf
 import random
 
 from tensorboardX import SummaryWriter
+import torch.nn.functional as F
+import torch.nn as nn
 
+def balanced_batch_generator(loader1, loader2):
+    iter1, iter2 = iter(loader1), iter(loader2)
+    while True:
+        try:
+            batch1 = next(iter1)
+        except:
+            iter1 = iter(loader1)
+            batch1 = next(iter1)
+        try:
+            batch2 = next(iter2)
+        except:
+            iter2 = iter(loader2)
+            batch2 = next(iter2)
+        samples1, samples1_clip, targets1, _, _, ds_id1 = batch1
+        samples2, samples2_clip, targets2, _, _, ds_id2 = batch2
+        
+        samples_clip = torch.cat([samples1_clip, samples2_clip], dim=0)
+        samples = torch.cat([samples1, samples2], dim=0)
+        targets = torch.cat([targets1, targets2], dim=0)
+        ds_id = torch.cat([ds_id1, ds_id2], dim=0)
+        yield samples, samples_clip, targets, None, None, ds_id
+class LabelSmoothingCrossEntropyNoReduction(nn.Module):
+    """ NLL loss with label smoothing.
+    """
+    def __init__(self, smoothing=0.1):
+        super(LabelSmoothingCrossEntropyNoReduction, self).__init__()
+        assert smoothing < 1.0
+        self.smoothing = smoothing
+        self.confidence = 1. - smoothing
+
+    def forward(self, x: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
+        logprobs = F.log_softmax(x, dim=-1)
+        nll_loss = -logprobs.gather(dim=-1, index=target.unsqueeze(1))
+        nll_loss = nll_loss.squeeze(1)
+        smooth_loss = -logprobs.mean(dim=-1)
+        loss = self.confidence * nll_loss + self.smoothing * smooth_loss
+        return loss
 
 class SmoothedValue(object):
     """Track a series of values and provide access to smoothed values over a
@@ -117,7 +156,7 @@ class MetricLogger(object):
     def add_meter(self, name, meter):
         self.meters[name] = meter
 
-    def log_every(self, iterable, print_freq, header=None):
+    def log_every(self, iterable, print_freq, header=None, len_iterable=None):
         i = 0
         if not header:
             header = ''
@@ -125,7 +164,10 @@ class MetricLogger(object):
         end = time.time()
         iter_time = SmoothedValue(fmt='{avg:.4f} (max: {max:.4f})')
         data_time = SmoothedValue(fmt='{avg:.4f} (max: {max:.4f})')
-        space_fmt = ':' + str(len(str(len(iterable)))) + 'd'
+        if len_iterable is None:
+            len_iterable = len(iterable)
+
+        space_fmt = ':' + str(len(str(len_iterable))) + 'd'
         log_msg = [
             header,
             '[{0' + space_fmt + '}/{1}]',
@@ -142,18 +184,18 @@ class MetricLogger(object):
             data_time.update(time.time() - end)
             yield obj
             iter_time.update(time.time() - end)
-            if i % print_freq == 0 or i == len(iterable) - 1:
-                eta_seconds = iter_time.global_avg * (len(iterable) - i)
+            if i % print_freq == 0 or i == len_iterable - 1:
+                eta_seconds = iter_time.global_avg * (len_iterable - i)
                 eta_string = str(datetime.timedelta(seconds=int(eta_seconds)))
                 if torch.cuda.is_available():
                     print(log_msg.format(
-                        i, len(iterable), eta=eta_string,
+                        i, len_iterable, eta=eta_string,
                         meters=str(self),
                         time=str(iter_time), data=str(data_time),
                         memory=torch.cuda.max_memory_allocated() / MB))
                 else:
                     print(log_msg.format(
-                        i, len(iterable), eta=eta_string,
+                        i, len_iterable, eta=eta_string,
                         meters=str(self),
                         time=str(iter_time), data=str(data_time)))
             i += 1
@@ -161,7 +203,7 @@ class MetricLogger(object):
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
         print('{} Total time: {} ({:.4f} s / it)'.format(
-            header, total_time_str, total_time / len(iterable)))
+            header, total_time_str, total_time / len_iterable))
 
     def log_every_joint(self, video_loader, image_loader, print_freq, header=None, image_num_ratio=1.0):
         # prepare random squeue
@@ -337,9 +379,8 @@ def init_distributed_mode(args):
         os.environ['RANK'] = str(args.rank)
         os.environ['WORLD_SIZE'] = str(args.world_size)
     elif 'SLURM_PROCID' in os.environ:
-        args.rank = int(os.environ['SLURM_PROCID'])
-        args.gpu = int(os.environ['SLURM_LOCALID'])
-        args.world_size = int(os.environ['SLURM_NTASKS'])
+
+        # Hardcoding SLURM environment variables
         os.environ['RANK'] = str(args.rank)
         os.environ['LOCAL_RANK'] = str(args.gpu)
         os.environ['WORLD_SIZE'] = str(args.world_size)
@@ -483,7 +524,7 @@ def cosine_scheduler(base_value, final_value, epochs, niter_per_ep, warmup_epoch
     return schedule
 
 
-def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, model_ema=None, max_accuracy=0.0):
+def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, model_ema=None, max_accuracy_src=0.0, max_accuracy_tgt=0.0):
     output_dir = Path(args.output_dir)
     epoch_name = str(epoch)
     if loss_scaler is not None:
@@ -495,7 +536,8 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, mo
                 'epoch': epoch,
                 'scaler': loss_scaler.state_dict(),
                 'args': args,
-                'max_accuracy': max_accuracy,
+                "max_accuracy_src": max_accuracy_src,
+                "max_accuracy_tgt": max_accuracy_tgt,
             }
 
             if model_ema is not None:
@@ -503,13 +545,13 @@ def save_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, mo
 
             save_on_master(to_save, checkpoint_path)
     else:
-        client_state = {'epoch': epoch, 'max_accuracy': max_accuracy}
+        client_state = {'epoch': epoch, "max_accuracy_src": max_accuracy_src, "max_accuracy_tgt": max_accuracy_tgt}
         if model_ema is not None:
             client_state['model_ema'] = get_state_dict(model_ema)
         model.save_checkpoint(save_dir=args.output_dir, tag="checkpoint-%s" % epoch_name, client_state=client_state)
 
 
-def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, model_name='latest', model_ema=None, max_accuracy=0.0):
+def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_scaler, model_name='latest', model_ema=None, max_accuracy_src=0.0, max_accuracy_tgt=0.0):
     output_dir = Path(args.output_dir)
     model_name = model_name
     if loss_scaler is not None:
@@ -521,7 +563,8 @@ def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_sca
                 'epoch': epoch,
                 'scaler': loss_scaler.state_dict(),
                 'args': args,
-                'max_accuracy': max_accuracy,
+                "max_accuracy_src": max_accuracy_src,
+                "max_accuracy_tgt": max_accuracy_tgt,
             }
 
             if model_ema is not None:
@@ -529,7 +572,7 @@ def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_sca
 
             save_on_master(to_save, checkpoint_path)
     else:
-        client_state = {'epoch': epoch, 'max_accuracy': max_accuracy}
+        client_state = {'epoch': epoch, "max_accuracy_src": max_accuracy_src, "max_accuracy_tgt": max_accuracy_tgt}
         if model_ema is not None:
             client_state['model_ema'] = get_state_dict(model_ema)
         model.save_checkpoint(save_dir=args.output_dir, tag="checkpoint-%s" % model_name, client_state=client_state)
@@ -537,12 +580,12 @@ def save_latest_model(args, epoch, model, model_without_ddp, optimizer, loss_sca
 
 def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, model_ema=None, test_best=False):
     output_dir = Path(args.output_dir)
-
     if loss_scaler is not None:
         # torch.amp
         if test_best:
             args.resume = os.path.join(output_dir, 'checkpoint-best.pth')
-            print("Auto resume checkpoint: %s" % args.resume)
+            print("Auto resume checkpoint for test best: %s" % args.resume)
+
         elif os.path.exists(os.path.join(output_dir, 'checkpoint-latest.pth')):
             args.resume = os.path.join(output_dir, 'checkpoint-latest.pth')
             print("Auto resume checkpoint: %s" % args.resume)
@@ -569,7 +612,8 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
             if 'optimizer' in checkpoint and 'epoch' in checkpoint:
                 optimizer.load_state_dict(checkpoint['optimizer'])
                 args.start_epoch = checkpoint['epoch'] + 1
-                args.max_accuracy = checkpoint['max_accuracy']
+                args.max_accuracy_src = checkpoint["max_accuracy_src"]
+                args.max_accuracy_tgt = checkpoint["max_accuracy_tgt"]
                 if hasattr(args, 'model_ema') and args.model_ema:
                     _load_checkpoint_for_ema(model_ema, checkpoint['model_ema'])
                 if 'scaler' in checkpoint:
@@ -579,11 +623,11 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
         # deepspeed, only support '--auto_resume'.
         flag = False
         if args.test_best and os.path.exists(os.path.join(output_dir, 'checkpoint-best')):
-            try:
-                load_specific_model(model, model_ema, args, output_dir, model_name='best')
-                flag = True
-            except Exception as e:
-                print('Not latest model')
+            #try:
+            load_specific_model(model, model_ema, args, output_dir, model_name='best')
+            flag = True
+            #except Exception as e:
+            #    print('Not latest model')
         elif args.auto_resume and not flag:
             flag = False
             try:
@@ -610,13 +654,28 @@ def auto_load_model(args, model, model_without_ddp, optimizer, loss_scaler, mode
                 if latest_ckpt >= 0:
                     load_specific_model(model, model_ema, args, output_dir, model_name='latest_ckpt')
 
+def load_model_colab(model_engine, model, output_dir, model_name, deepspeed=True, strict=False):
+    if deepspeed:
+        print(f"Loading {model_name} checkpoint for colab training")
+        pth = os.path.join(output_dir, "checkpoint-best/mp_rank_00_model_states.pt")
+    else:
+        pth = os.path.join(output_dir, "checkpoint-best.pth")
+        print(f"Loading {pth} checkpoint for colab training")
+    checkpoint = torch.load(pth)
+    model_state_dict = checkpoint['model']
+    model.load_state_dict(model_state_dict, strict=strict)
+    #_, client_states = model.load_checkpoint(output_dir, tag=f'{model_name}')
+    if deepspeed:
+        model_engine.module = model
 
 def load_specific_model(model, model_ema, args, output_dir, model_name):
     args.resume = os.path.join(output_dir, f'checkpoint-{model_name}')
     print(f"Auto resume the {model_name} checkpoint")
     _, client_states = model.load_checkpoint(args.output_dir, tag=f'checkpoint-{model_name}')
     args.start_epoch = client_states['epoch'] + 1
-    args.max_accuracy = client_states['max_accuracy'] 
+    args.max_accuracy_src = client_states['max_accuracy_src'] 
+    args.max_accuracy_tgt = client_states['max_accuracy_tgt'] 
+    
     if model_ema is not None:
         if args.model_ema:
             _load_checkpoint_for_ema(model_ema, client_states['model_ema'])
@@ -698,3 +757,40 @@ def multiple_pretrain_samples_collate(batch, fold=False):
         return [process_data], mask
     else:
         return process_data, mask
+
+def prepare_tubelet_inputs(vid):
+    #data2 = (((data1 + 1) * 255) / 2).astype('uint8')
+    return [(((np.squeeze(x, axis=0)+1)*255)/2).astype('uint8') for x in np.split(vid, vid.shape[0], axis=0)]
+
+def apply_transform(vid1, vid2, transform_fn):
+    vid1 = [np.squeeze(x, axis=1).transpose(1,2,0) for x in np.split(vid1, vid1.shape[1], axis=1)]
+    vid2 = [np.squeeze(x, axis=1).transpose(1,2,0) for x in np.split(vid2, vid2.shape[1], axis=1)]
+	
+    vid = vid1 + vid2
+    vid_tensor, trans_params = \
+            transform_fn.apply_image(vid, return_transform_param=True)
+    
+    clip_len = int(vid_tensor.size(0) / 2)
+    vid1 = vid_tensor[0:clip_len,:,:,:].permute(1, 0, 2, 3).contiguous()
+    vid2 = vid_tensor[clip_len:,:,:,:].permute(1, 0, 2, 3).contiguous()
+    
+    vid1.mul_(2).sub_(1)
+    vid2.mul_(2).sub_(1)
+
+    return vid1, vid2
+
+def transform_tubelet(vid1, vid2, fn):
+    orig_shape = vid1.shape
+    vid1, vid2 = prepare_tubelet_inputs(vid1), prepare_tubelet_inputs(vid2)
+    from multiprocessing import Pool
+    pool = Pool(8)
+    inputs = [(x,y,fn) for x,y in zip(vid1, vid2)]
+    vid_samples = pool.starmap(apply_transform, inputs)
+    out_vid1 = [x[0] for x in vid_samples]
+    out_vid2 = [x[1] for x in vid_samples]
+    out_vid1 = torch.stack(out_vid1)
+    out_vid1 = out_vid1.reshape(orig_shape)#[:,::2]
+    out_vid2 = torch.stack(out_vid2)
+    out_vid2 = out_vid2.reshape(orig_shape)#[:,::2]
+    return out_vid1, out_vid2
+
