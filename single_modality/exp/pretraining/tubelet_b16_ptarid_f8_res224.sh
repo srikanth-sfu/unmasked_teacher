@@ -34,7 +34,7 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py 
     --tubelet_size 1 \
     --lr 1.5e-4 \
     --drop_path 0.1 \
-    --batch_size 64 \
+    --batch_size 32 \
     --num_segments 8 \
     --num_frames 8 \
     --sampling_rate 1 \
@@ -44,8 +44,8 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py 
     --warmup_epochs 10 \
     --save_ckpt_freq 1000 \
     --epochs 50 \
-    --use_checkpoint \
-    --checkpoint_num 4 \
+    #--use_checkpoint \
+    #--checkpoint_num 4 \
     --pin_mem \
     --log_dir ${OUTPUT_DIR} \
     --output_dir ${OUTPUT_DIR} \
