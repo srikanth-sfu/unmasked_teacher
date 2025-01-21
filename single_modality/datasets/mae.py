@@ -198,7 +198,7 @@ class VideoMAE(torch.utils.data.Dataset):
                 CenterCrop(size=(224, 224)),
             ])
             raw_images = [np.transpose(data_transform(np.array(x)[np.newaxis]), (0,3,1,2)) for x in images]
-            raw_images = torch.from_numpy(np.concatenate(raw_images))
+            raw_images = torch.from_numpy(np.transpose(np.concatenate(raw_images), (1,0,2,3)))
             return (process_data, mask, raw_images)
 
     def __len__(self):
