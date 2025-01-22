@@ -244,7 +244,6 @@ def main(args):
     moco_model = get_model(args)
     for param in moco_model.parameters():
         param.requires_grad = False
-    moco = MoCo(moco_model, args.clip_output_dim)
     patch_size = model.encoder.patch_embed.patch_size
     print("Patch size = %s" % str(patch_size))
     print("Tubelet size = %s" % str(args.tubelet_size))
@@ -318,6 +317,11 @@ def main(args):
             checkpoint_model['pos_embed'] = new_pos_embed
 
     utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix)
+    utils.load_state_dict(moco_model, checkpoint_model, prefix=args.model_prefix)
+    moco = MoCo(moco_model, args.clip_output_dim)
+    for name, param in moco.named_parameters():
+        if "key_fc" in name:
+            param.requires_grad = False
 
 
     # teacher model
