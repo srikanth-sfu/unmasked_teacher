@@ -52,7 +52,7 @@ class MoCo(nn.Module, TrainStepMixin):
         self.key_encoder = model
         self.fc = nn.TransformerEncoderLayer(in_channels, 2, in_channels)
         self.key_fc = nn.TransformerEncoderLayer(in_channels, 2, in_channels)
-        self.positional_encoding = nn.Parameter(torch.randn(360, in_channels))
+        self.positional_encoding = nn.Parameter(torch.randn(1568, in_channels))
     
     @torch.no_grad()
     def _batch_shuffle_ddp(self, x):
