@@ -45,7 +45,7 @@ class MoCo(nn.Module, TrainStepMixin):
         self.m = momentum
         self.T = temperature
 
-        self.register_buffer("queue", torch.randn(128, queue_size))
+        self.register_buffer("queue", torch.randn(in_channels, queue_size))
         self.queue = nn.functional.normalize(self.queue, dim=0)
 
         self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
