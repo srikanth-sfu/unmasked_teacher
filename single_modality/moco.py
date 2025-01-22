@@ -52,7 +52,7 @@ class MoCo(nn.Module, TrainStepMixin):
         self.key_encoder = model
         transformer_layer = nn.TransformerEncoderLayer(
             d_model=in_channels,
-            nhead=2,
+            nhead=1,
             dim_feedforward=128,
             dropout=0.1,
             activation='relu',
