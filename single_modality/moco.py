@@ -50,8 +50,20 @@ class MoCo(nn.Module, TrainStepMixin):
 
         self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
         self.key_encoder = model
-        self.fc = nn.TransformerEncoderLayer(in_channels, 2, in_channels)
-        self.key_fc = nn.TransformerEncoderLayer(in_channels, 2, in_channels)
+        transformer_layer = nn.TransformerEncoderLayer(
+            d_model=in_channels,
+            nhead=2,
+            dim_feedforward=in_channels,
+            dropout=0.1,
+            activation='relu',
+        )
+        
+        self.fc = nn.Sequential(
+            *[nn.TransformerEncoder(transformer_layer, num_layers=1) for _ in range(2)]
+        )
+        self.key_fc = nn.Sequential(
+            *[nn.TransformerEncoder(transformer_layer, num_layers=1) for _ in range(2)]
+        )
         self.positional_encoding = nn.Parameter(torch.randn(1568, in_channels))
     
     @torch.no_grad()
