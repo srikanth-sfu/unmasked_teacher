@@ -112,14 +112,16 @@ def create_optimizer(
         parameters = get_parameter_groups(
             model, weight_decay, skip, get_num_layer, get_layer_scale,
         )
-        additional_params = get_parameter_groups(
-            additional_params, weight_decay, (), None, None,
-        )
+        if additional_params is not None:
+            additional_params = get_parameter_groups(
+                additional_params, weight_decay, (), None, None,
+            )
         weight_decay = 0.
     else:
         parameters = model.parameters() 
-       
-    parameters += additional_params   
+    
+    if additional_params is not None:
+        parameters += additional_params   
 
     if 'fused' in opt_lower:
         assert has_apex and torch.cuda.is_available(), 'APEX and CUDA required for fused optimizers'
