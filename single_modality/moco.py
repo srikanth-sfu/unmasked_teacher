@@ -137,7 +137,7 @@ class MoCo(nn.Module, TrainStepMixin):
 
         ptr = int(self.queue_ptr)
         assert self.K % batch_size == 0  # for simplicity
-
+        
         # replace the keys at ptr (dequeue and enqueue)
         self.queue[:, ptr:ptr + batch_size] = keys.transpose(0, 1)
         ptr = (ptr + batch_size) % self.K  # move pointer

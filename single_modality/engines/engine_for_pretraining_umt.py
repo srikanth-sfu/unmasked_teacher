@@ -27,7 +27,7 @@ def train_one_epoch(
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     metric_logger.add_meter('min_lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     header = 'Epoch: [{}]'.format(epoch)
-    print_freq = 10
+    print_freq = 8
 
     if clip_loss_type == 'mse':
         loss_func_clip = nn.MSELoss()
@@ -119,7 +119,7 @@ def train_one_epoch(
             else:
                 raise NotImplementedError
 
-        loss = loss_pixel + clip_loss_ratio * loss_clip + +(0.1*moco_loss)
+        loss = loss_pixel + clip_loss_ratio * loss_clip + (moco_loss)
         loss_value = loss.item()
 
         if not math.isfinite(loss_value):

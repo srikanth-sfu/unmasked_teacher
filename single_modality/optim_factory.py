@@ -77,7 +77,10 @@ def get_parameter_groups(
 
         if group_name not in parameter_group_names:
             if get_layer_scale is not None:
-                scale = get_layer_scale(layer_id)
+                if isinstance(get_layer_scale, int):
+                    scale = get_layer_scale
+                else:
+                    scale = get_layer_scale(layer_id)
             else:
                 scale = 1.
 
@@ -114,7 +117,7 @@ def create_optimizer(
         )
         if additional_params is not None:
             additional_params = get_parameter_groups(
-                additional_params, weight_decay, (), None, None,
+                additional_params, weight_decay, (), None, 1,
             )
         weight_decay = 0.
     else:
