@@ -518,9 +518,9 @@ def main(args, ds_init):
     print("Model = %s" % str(model_without_ddp))
     print('number of params:', n_parameters)
 
-#    args.lr = args.lr * total_batch_size * args.num_sample / 256
-#    args.min_lr = args.min_lr * total_batch_size * args.num_sample / 256
-#    args.warmup_lr = args.warmup_lr * total_batch_size * args.num_sample / 256
+    args.lr = args.lr * total_batch_size * args.num_sample / 256
+    args.min_lr = args.min_lr * total_batch_size * args.num_sample / 256
+    args.warmup_lr = args.warmup_lr * total_batch_size * args.num_sample / 256
     print("LR = %.8f" % args.lr)
     print("Batch size = %d" % total_batch_size)
     print("Repeated sample = %d" % args.num_sample)
