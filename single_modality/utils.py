@@ -780,10 +780,10 @@ def apply_transform(vid1, vid2, transform_fn):
 def transform_tubelet(vid1, vid2, fn):
     orig_shape = vid1.shape
     vid1, vid2 = prepare_tubelet_inputs(vid1), prepare_tubelet_inputs(vid2)
-    from multiprocessing import Pool
-    pool = Pool(8)
+    #from multiprocessing import Pool
+    #pool = Pool(8)
     inputs = [(x,y,fn) for x,y in zip(vid1, vid2)]
-    vid_samples = pool.starmap(apply_transform, inputs)
+    vid_samples = [apply_transform(*x) for x in inputs]
     out_vid1 = [x[0] for x in vid_samples]
     out_vid2 = [x[1] for x in vid_samples]
     out_vid1 = torch.stack(out_vid1)
