@@ -39,7 +39,7 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py 
     --num_segments 8 \
     --num_frames 8 \
     --sampling_rate 1 \
-    --num_workers 12 \
+    --num_workers 1 \
     --opt adamw \
     --opt_betas 0.9 0.95 \
     --warmup_epochs 10 \
