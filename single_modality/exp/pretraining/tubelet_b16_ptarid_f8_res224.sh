@@ -1,10 +1,10 @@
 export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
-JOB_NAME='tubelet_umt_b16_arid'
-OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt/pretrain/$JOB_NAME"
+JOB_NAME='tubelet_umt_b16_k600_dailyda'
+OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/pretrain/$JOB_NAME"
 LOG_DIR="./logs/${JOB_NAME}"
-DATA_PATH='video_splits/arid_train.csv'
+DATA_PATH='video_splits/kinetics600_dailyda_train.csv'
 
 # srun -p $PARTITION \
 #         --job-name=${JOB_NAME} \
