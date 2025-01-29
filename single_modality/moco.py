@@ -45,6 +45,7 @@ class MoCo(nn.Module, TrainStepMixin):
         self.m = momentum
         self.T = temperature
 
+        in_channels *= 6
         self.register_buffer("queue", torch.randn(in_channels, queue_size))
         self.queue = nn.functional.normalize(self.queue, dim=0)
 
@@ -58,13 +59,25 @@ class MoCo(nn.Module, TrainStepMixin):
             activation='relu',
         )
         
+#        self.fc = nn.Sequential(
+#            *[nn.TransformerEncoder(transformer_layer, num_layers=1) for _ in range(2)]
+#        )
+#        self.key_fc = nn.Sequential(
+#            *[nn.TransformerEncoder(transformer_layer, num_layers=1) for _ in range(2)]
+#        )
+#        self.positional_encoding = nn.Parameter(torch.randn(1568, in_channels))
         self.fc = nn.Sequential(
-            *[nn.TransformerEncoder(transformer_layer, num_layers=1) for _ in range(2)]
+            nn.Linear(in_channels, in_channels),
+            nn.LeakyReLU(0.1),
+            nn.Dropout(0.2),
+            nn.Linear(in_channels, in_channels),
         )
         self.key_fc = nn.Sequential(
-            *[nn.TransformerEncoder(transformer_layer, num_layers=1) for _ in range(2)]
+            nn.Linear(in_channels, in_channels),
+            nn.LeakyReLU(0.1),
+            nn.Dropout(0.2),
+            nn.Linear(in_channels, in_channels),
         )
-        self.positional_encoding = nn.Parameter(torch.randn(1568, in_channels))
     
     @torch.no_grad()
     def _batch_shuffle_ddp(self, x):
@@ -137,7 +150,7 @@ class MoCo(nn.Module, TrainStepMixin):
 
         ptr = int(self.queue_ptr)
         assert self.K % batch_size == 0  # for simplicity
-
+        
         # replace the keys at ptr (dequeue and enqueue)
         self.queue[:, ptr:ptr + batch_size] = keys.transpose(0, 1)
         ptr = (ptr + batch_size) % self.K  # move pointer
@@ -148,11 +161,18 @@ class MoCo(nn.Module, TrainStepMixin):
     def forward(self, model, q, k_in, mask):
         with(torch.cuda.amp.autocast()):
             NS, B, _, _ = q.shape
+            NS = 1
+#            q = q.reshape(-1,q.shape[-2], q.shape[-1])
+#            q = q + self.positional_encoding
+#            q = q.transpose(0,1)
+#            q = self.fc(q)
+#            q = q.transpose(0,1)
+#            q = q.mean(dim=1)
+#            q = self.fc(q)
+#            q = nn.functional.normalize(q, dim=1)
+            q = q.permute(1,2,3,0)
+            q = q.reshape(q.shape[0], q.shape[1],-1)
             q = q.reshape(-1,q.shape[-2], q.shape[-1])
-            q = q + self.positional_encoding
-            q = q.transpose(0,1)
-            q = self.fc(q)
-            q = q.transpose(0,1)
             q = q.mean(dim=1)
             q = self.fc(q)
             q = nn.functional.normalize(q, dim=1)
@@ -162,12 +182,19 @@ class MoCo(nn.Module, TrainStepMixin):
                 self._momentum_update_key_encoder(backbone=model)
                 im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
                 tgt_tubelet = self.key_encoder_forward(im_k, mask)
+                #tgt_tubelet = tgt_tubelet[0:1]
+#                k = tgt_tubelet.reshape(-1,tgt_tubelet.shape[-2], tgt_tubelet.shape[-1])
+#                k = k + self.positional_encoding
+#                k = k.transpose(0,1)
+#                k = self.key_fc(k)
+#                k = k.transpose(0,1)
+#                k = k.mean(dim=1)
+#                k = nn.functional.normalize(k, dim=1).reshape(NS, B, -1)
+                tgt_tubelet = tgt_tubelet.permute(1,2,3,0)
+                tgt_tubelet = tgt_tubelet.reshape(B,tgt_tubelet.shape[1], -1)
                 k = tgt_tubelet.reshape(-1,tgt_tubelet.shape[-2], tgt_tubelet.shape[-1])
-                k = k + self.positional_encoding
-                k = k.transpose(0,1)
-                k = self.key_fc(k)
-                k = k.transpose(0,1)
                 k = k.mean(dim=1)
+                k = self.key_fc(k)
                 k = nn.functional.normalize(k, dim=1).reshape(NS, B, -1)
                 k = torch.transpose(k, 1, 0)
                 k = k.contiguous()

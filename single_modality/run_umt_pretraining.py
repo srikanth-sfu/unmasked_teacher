@@ -188,7 +188,6 @@ def get_model(args):
 
 def main(args):
     utils.init_distributed_mode_new(args)
-
     print(args)
     tubelet_params = [
                 dict(

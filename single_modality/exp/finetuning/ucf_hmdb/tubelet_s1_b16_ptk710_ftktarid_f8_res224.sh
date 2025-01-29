@@ -1,7 +1,7 @@
 export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
-MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/pretrain/tubelet_umt_b16_arid/checkpoint-49.pth'
+MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/pretrain/tubelet_umt_b16_arid/checkpoint-latest.pth'
 JOB_NAME='tubelet_s1_b16_ktarid_f8_res224'
 OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt/src_finetune/$JOB_NAME"
 PREFIX="${SLURM_TMPDIR}/data/"
