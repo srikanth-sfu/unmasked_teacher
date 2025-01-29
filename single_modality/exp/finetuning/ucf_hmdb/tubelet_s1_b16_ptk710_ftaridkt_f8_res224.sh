@@ -3,7 +3,7 @@ export OMP_NUM_THREADS=1
 
 MODEL_PATH='/project/def-mpederso/smuralid/checkpoints/umt/pretrain/tubelet_umt_b16_k600_dailyda/checkpoint-latest.pth'
 JOB_NAME='tubelet_s1_b16_aridkt_f8_res224'
-OUTPUT_DIR="/home/ens/smuralidharan/checkpoints/umt/src_finetune/$JOB_NAME"
+OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/src_finetune/$JOB_NAME"
 PREFIX="${SLURM_TMPDIR}/data/"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/'
