@@ -45,7 +45,7 @@ def train_one_epoch(
                     param_group["weight_decay"] = wd_schedule_values[it]
 
         videos, bool_masked_pos, videos_raw = batch
-        num_rows = 8
+        num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
         videos_raw = videos_raw[indices]
         feat_src_np, feat_tgt_np = videos_raw.numpy(), copy.deepcopy(videos_raw.numpy())
