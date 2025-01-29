@@ -6,7 +6,10 @@ import torch
 from torch import nn
 
 
+    
 MODEL_PATH = '/home/ens/smuralidharan/checkpoints/umt/clip_visual_encoder'
+if "SLURM_TMPDIR" in os.environ:
+    MODEL_PATH = '/project/def-mpederso/smuralid/checkpoints/umt/clip_visual_encoder'
 _MODELS = {
     # extracted from OpenAI, see extract_clip
     "ViT-B/16": os.path.join(MODEL_PATH, "vit_b16.pth"),
