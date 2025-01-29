@@ -21,6 +21,7 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py 
     --mask_type 'attention'  \
     --mask_ratio 0.8 \
     --model 'pretrain_umt_base_patch16_224' \
+    --k710_weights /project/def-mpederso/smuralid/checkpoints/umt/b16_ptk710_f8_res224.pth \
     --clip_teacher 'clip_b16' \
     --clip_loss_ratio 1 \
     --clip_loss_type 'l2' \
