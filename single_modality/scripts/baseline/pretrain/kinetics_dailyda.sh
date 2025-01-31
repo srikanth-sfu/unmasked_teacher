@@ -19,9 +19,10 @@ module load rust/1.76.0
 source umt/bin/activate
 mkdir data && cd data
 cp -r /project/def-mpederso/smuralid/datasets/kinetics600.zip .
-cp -r /project/def-mpederso/smuralid/datasets/arid.zip .
+cp /project/def-mpederso/smuralid/datasets/Daily-DA/ARID_v1_5_211015.zip .
 unzip -qq kinetics600.zip
-unzip -qq arid.zip
+unzip -qq ARID_v1_5_211015.zip
+mv clips_v1.5 arid
 cd $SLURM_TMPDIR
 
 git clone git@github.com:srikanth-sfu/unmasked_teacher.git
