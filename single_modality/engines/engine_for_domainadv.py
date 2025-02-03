@@ -134,17 +134,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         with torch.no_grad():
             # calculate the predicted CLIP features
-            B, C, T, H, W = samples_tgt.shape
-            clip_input_resolution = 224
-            if H != clip_input_resolution:
-                clip_videos = torch.nn.functional.interpolate(
-                    samples_tgt.view(B, C*T, H, W), 
-                    size=(clip_input_resolution, clip_input_resolution), 
-                    mode='bicubic', align_corners=False
-                )
-                clip_videos = clip_videos.view(B, C, T, clip_input_resolution, clip_input_resolution)
-            else:
-                clip_videos = samples_tgt
+            print(samples_tgt.shape)
+            _, C, T, H, W = samples_tgt.shape
+            assert(W == 224)
+            clip_videos = samples_tgt
             
             with torch.cuda.amp.autocast():
                 norm_clip, attn = teacher_model(clip_videos)
