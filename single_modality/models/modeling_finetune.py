@@ -343,7 +343,7 @@ class VisionTransformer(nn.Module):
             return x[:, 0]
     
     def forward_domain(self, feat_video):
-        feat_fc_domain_video = GradReverse(feat_video, beta=0.75)
+        feat_fc_domain_video = GradReverse.apply(feat_video, beta=0.75)
         feat_fc_domain_video = self.fc_feature_domain_video(feat_fc_domain_video)
         feat_fc_domain_video = self.relu(feat_fc_domain_video)
         pred_fc_domain_video = self.fc_classifier_domain_video(feat_fc_domain_video)
