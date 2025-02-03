@@ -91,8 +91,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         #feat_src_np, feat_tgt_np = samples.numpy(), samples_tgt.numpy()
         #src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
         B = samples_tgt.shape[0]
-        samples_tgt = torch.split(samples_tgt, split_size_or_sections=2, dim=1)
-        samples_tgt = torch.cat(samples_tgt)
+        samples_tgt = torch.split(samples_tgt, split_size_or_sections=1, dim=1)
+        samples_tgt = torch.cat(samples_tgt).squeeze(1)
         domain_targets = torch.cat([torch.zeros(B), torch.ones(B)])
 
         step = data_iter_step // update_freq
@@ -134,20 +134,19 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         with torch.no_grad():
             # calculate the predicted CLIP features
-            print(samples_tgt.shape)
             _, C, T, H, W = samples_tgt.shape
             assert(W == 224)
             clip_videos = samples_tgt
             
             with torch.cuda.amp.autocast():
-                norm_clip, attn = teacher_model(clip_videos)
+                norm_clip, attn = teacher_model(clip_videos[B:])
                 norm_clip = norm_clip/norm_clip.norm(dim=1, keepdim=True)
                 # norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)#.reshape(-1,norm_clip.shape[-1])
                 norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)
                 clip_output = (norm_clip @ clip_label_embedding.T)#.reshape(B,-1).mean(dim=-1).squeeze(0)
                 clip_label_conf = nn.functional.softmax(100.*clip_output, dim=-1).mean(dim=1)
                 clip_label_conf, clip_labels = clip_label_conf.max(-1)
-                src_output = model(samples_tgt)
+                src_output = model(clip_videos[B:])
                 src_encoder_labels_conf = nn.functional.softmax(src_output,dim=-1)
                 src_encoder_labels_conf, src_encoder_labels = src_encoder_labels_conf.max(-1)
                 target_labels, target_mask, target_conf = combine_labels(clip_labels, clip_label_conf, src_encoder_labels, src_encoder_labels_conf, threshold=0.1)
@@ -170,7 +169,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 loss_target = (loss_target * target_conf[target_mask]).mean()
             else:
                 loss_target = torch.tensor(0.)
-            domain_loss = criterion_domain(clip_videos, domain_targets)
+            domain_loss = criterion_domain(domain_pred, domain_targets)
 
         loss = loss+loss_target+domain_loss#+(0.1*moco_loss)
         loss_value = loss.item()
