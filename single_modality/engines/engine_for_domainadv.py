@@ -221,7 +221,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(class_acc=class_acc.detach())
         metric_logger.update(class_acc_target=class_acc_target.detach())
         metric_logger.update(moco_loss=moco_loss)
-        metric_logger.update(loss_scale=loss_scale_value.detach())
+        metric_logger.update(loss_scale=loss_scale_value)
         min_lr = 10.
         max_lr = 0.
         for group in optimizer.param_groups:
@@ -244,7 +244,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             log_writer.update(class_acc_target=class_acc_target.detach(), head="loss")
             log_writer.update(moco_loss=moco_loss, head="loss")
 
-            log_writer.update(loss_scale=loss_scale_value.detach(), head="opt")
+            log_writer.update(loss_scale=loss_scale_value, head="opt")
             log_writer.update(lr=max_lr.detach(), head="opt")
             log_writer.update(min_lr=min_lr.detach(), head="opt")
             log_writer.update(weight_decay=weight_decay_value.detach(), head="opt")
