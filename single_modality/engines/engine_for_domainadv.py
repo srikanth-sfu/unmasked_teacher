@@ -228,8 +228,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             min_lr = min(min_lr, group["lr"])
             max_lr = max(max_lr, group["lr"])
 
-        metric_logger.update(lr=max_lr.detach())
-        metric_logger.update(min_lr=min_lr.detach())
+        metric_logger.update(lr=max_lr)
+        metric_logger.update(min_lr=min_lr)
         weight_decay_value = None
         for group in optimizer.param_groups:
             if group["weight_decay"] > 0:
