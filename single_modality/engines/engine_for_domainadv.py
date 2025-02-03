@@ -163,7 +163,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         moco_loss = 0.
         with torch.cuda.amp.autocast():
             outputs_clip = model(clip_videos[B:], mask=bool_masked_pos)
-            _, domain_pred = model(clip_videos, mask=bool_masked_pos)
+            _, domain_pred = model(clip_videos, mask=None)
             if target_mask.type(torch.int).sum() > 0: 
                 loss_target = criterion_target(outputs_clip[target_mask], target_labels[target_mask])
                 loss_target = (loss_target * target_conf[target_mask]).mean()
