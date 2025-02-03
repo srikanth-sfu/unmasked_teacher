@@ -218,10 +218,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(loss=loss_value)
         metric_logger.update(loss_target=loss_target.detach().item())
         metric_logger.update(domain_loss=domain_loss.detach().item())
-        metric_logger.update(class_acc=class_acc)
-        metric_logger.update(class_acc_target=class_acc_target)
+        metric_logger.update(class_acc=class_acc.detach())
+        metric_logger.update(class_acc_target=class_acc_target.detach())
         metric_logger.update(moco_loss=moco_loss)
-        metric_logger.update(loss_scale=loss_scale_value)
+        metric_logger.update(loss_scale=loss_scale_value.detach())
         min_lr = 10.
         max_lr = 0.
         for group in optimizer.param_groups:
@@ -321,9 +321,9 @@ def validation_one_epoch(data_loader, model, device, fp32=False):
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
         batch_size = videos.shape[0]
-        metric_logger.update(loss=loss.item())
-        metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+        metric_logger.update(loss=loss.detach().item())
+        metric_logger.meters['acc1'].update(acc1.detach().item(), n=batch_size)
+        metric_logger.meters['acc5'].update(acc5.detach().item(), n=batch_size)
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
     print('* Acc@1 {top1.global_avg:.3f} Acc@5 {top5.global_avg:.3f} loss {losses.global_avg:.3f}'
@@ -368,9 +368,9 @@ def final_test(data_loader, model, device, file):
         acc1, acc5 = accuracy(output, target, topk=(1, 5))
 
         batch_size = videos.shape[0]
-        metric_logger.update(loss=loss.item())
-        metric_logger.meters['acc1'].update(acc1.item(), n=batch_size)
-        metric_logger.meters['acc5'].update(acc5.item(), n=batch_size)
+        metric_logger.update(loss=loss.detach().item())
+        metric_logger.meters['acc1'].update(acc1.detach().item(), n=batch_size)
+        metric_logger.meters['acc5'].update(acc5.detach().item(), n=batch_size)
 
     if not os.path.exists(file):
         os.mknod(file)
