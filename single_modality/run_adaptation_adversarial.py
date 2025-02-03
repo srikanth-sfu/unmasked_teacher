@@ -666,27 +666,27 @@ def main(args, ds_init):
             log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                          'epoch': epoch,
                          'n_parameters': n_parameters}
-        # preds_file = os.path.join(args.output_dir, str(global_rank) + '.txt')
-        # test_stats = final_test(data_loader_test, model, device, preds_file)
-        # torch.distributed.barrier()
-        # if global_rank == 0:
-        #     print("Start merging results...")
-        #     top1 ,top5 = merge(args.output_dir, num_tasks)
-        #     print(f"Accuracy of the network on the {len(dataset_test)} test videos: Top-1: {top1:.2f}%, Top-5: {top5:.2f}%")
-        #     log_stats.update({'multicrop-top-1': top1,'multicrop-top-5': top5})
-        #     if log_writer is not None:
-        #         log_writer.update(multicrop_top_1=top1, multicrop_top_5=top5, head="perf", step=epoch)
-        #     if args.output_dir and utils.is_main_process():
-        #         with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
-        #             f.write(json.dumps(log_stats) + "\n")
-        #             f.close()
-        #     if max_accuracy_tgt < top1:
-        #         max_accuracy_tgt = top1
-        #         if args.output_dir and args.save_ckpt:
-        #             utils.save_latest_model(
-        #                 args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-        #                 loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema,
-        #                 max_accuracy_src=max_accuracy_src, max_accuracy_tgt=max_accuracy_tgt)
+        preds_file = os.path.join(args.output_dir, str(global_rank) + '.txt')
+        test_stats = final_test(data_loader_test, model, device, preds_file)
+        torch.distributed.barrier()
+        if global_rank == 0:
+            print("Start merging results...")
+            top1 ,top5 = merge(args.output_dir, num_tasks)
+            print(f"Accuracy of the network on the {len(dataset_test)} test videos: Top-1: {top1:.2f}%, Top-5: {top5:.2f}%")
+            log_stats.update({'multicrop-top-1': top1,'multicrop-top-5': top5})
+            if log_writer is not None:
+                log_writer.update(multicrop_top_1=top1, multicrop_top_5=top5, head="perf", step=epoch)
+            if args.output_dir and utils.is_main_process():
+                with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+                    f.write(json.dumps(log_stats) + "\n")
+                    f.close()
+            if max_accuracy_tgt < top1:
+                max_accuracy_tgt = top1
+                if args.output_dir and args.save_ckpt:
+                    utils.save_latest_model(
+                        args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                        loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema,
+                        max_accuracy_src=max_accuracy_src, max_accuracy_tgt=max_accuracy_tgt)
         print(f'Max accuracy -- src val: {max_accuracy_src:.2f}%')
         print(f'Max accuracy -- tgt val: {max_accuracy_tgt:.2f}%')
 
