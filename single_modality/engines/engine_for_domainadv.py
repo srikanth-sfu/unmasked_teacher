@@ -115,8 +115,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         samples_tgt = samples_tgt.to(device, non_blocking=True)
 
-        src_tubelet = src_tubelet.to(device, non_blocking=True)
-        tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
+        # src_tubelet = src_tubelet.to(device, non_blocking=True)
+        # tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
 
 
         if mixup_fn is not None:
@@ -166,7 +166,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             pos2 = importance[:, :N_vis]
             bool_masked_pos[pos1, pos2] = 0
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
-        src_tubelet = model(src_tubelet, return_feats=True)
+        #src_tubelet = model(src_tubelet, return_feats=True)
         #moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
         moco_loss = 0.
         with torch.cuda.amp.autocast():
