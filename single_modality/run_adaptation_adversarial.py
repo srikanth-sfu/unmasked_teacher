@@ -558,7 +558,7 @@ def main(args, ds_init):
         if args.distributed:
             print("Loading model outside deepspeed")
             utils.load_model_colab(model_engine=None, model=moco.key_encoder, output_dir=args.finetune, model_name=None, deepspeed=False)
-            utils.load_model_colab(model_engine=None, model=model, output_dir=args.finetune, model_name=None, deepspeed=False, strict=True)
+            utils.load_model_colab(model_engine=None, model=model, output_dir=args.finetune, model_name=None, deepspeed=False, strict=False)
             #model.enable_gradient_checkpointing(gradient_checkpointing_kwargs={"use_reentrant": False})
             model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
             model_without_ddp = model.module
