@@ -234,21 +234,21 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         for group in optimizer.param_groups:
             if group["weight_decay"] > 0:
                 weight_decay_value = group["weight_decay"]
-        metric_logger.update(weight_decay=weight_decay_value)
-        metric_logger.update(grad_norm=grad_norm)
+        metric_logger.update(weight_decay=weight_decay_value.detach())
+        metric_logger.update(grad_norm=grad_norm.detach())
 
         if log_writer is not None:
-            log_writer.update(loss=loss_value, head="loss")
-            log_writer.update(loss_target=loss_target.item(), head="loss")
-            log_writer.update(class_acc=class_acc, head="loss")
-            log_writer.update(class_acc_target=class_acc_target, head="loss")
+            log_writer.update(loss=loss_value.detach(), head="loss")
+            log_writer.update(loss_target=loss_target.detach().item(), head="loss")
+            log_writer.update(class_acc=class_acc.detach(), head="loss")
+            log_writer.update(class_acc_target=class_acc_target.detach(), head="loss")
             log_writer.update(moco_loss=moco_loss, head="loss")
 
-            log_writer.update(loss_scale=loss_scale_value, head="opt")
-            log_writer.update(lr=max_lr, head="opt")
-            log_writer.update(min_lr=min_lr, head="opt")
-            log_writer.update(weight_decay=weight_decay_value, head="opt")
-            log_writer.update(grad_norm=grad_norm, head="opt")
+            log_writer.update(loss_scale=loss_scale_value.detach(), head="opt")
+            log_writer.update(lr=max_lr.detach(), head="opt")
+            log_writer.update(min_lr=min_lr.detach(), head="opt")
+            log_writer.update(weight_decay=weight_decay_value.detach(), head="opt")
+            log_writer.update(grad_norm=grad_norm.detach(), head="opt")
 
             log_writer.set_step()
     # gather the stats from all processes
