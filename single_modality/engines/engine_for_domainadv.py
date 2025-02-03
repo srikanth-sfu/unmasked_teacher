@@ -165,7 +165,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             outputs_clip = model(clip_videos[B:], mask=bool_masked_pos)
             perm = torch.randperm(clip_videos.shape[0])
             idx = perm[:3]
-            _, domain_pred = model(clip_videos[perm], mask=None, training=True)
+            _, domain_pred = model(clip_videos[idx], mask=None, training=True)
             if target_mask.type(torch.int).sum() > 0: 
                 loss_target = criterion_target(outputs_clip[target_mask], target_labels[target_mask])
                 loss_target = (loss_target * target_conf[target_mask]).mean()
