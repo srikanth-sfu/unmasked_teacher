@@ -234,7 +234,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         for group in optimizer.param_groups:
             if group["weight_decay"] > 0:
                 weight_decay_value = group["weight_decay"]
-        metric_logger.update(weight_decay=weight_decay_value.detach())
+        metric_logger.update(weight_decay=weight_decay_value)
         metric_logger.update(grad_norm=grad_norm.detach())
 
         if log_writer is not None:
