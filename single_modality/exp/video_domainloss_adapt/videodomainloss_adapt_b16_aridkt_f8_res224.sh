@@ -5,7 +5,7 @@ MODEL_PATH='/project/def-mpederso/smuralid/checkpoints/umt/src_finetune/tubelet_
 JOB_NAME='videodomainloss_adapt_b16_aridkt_f8_res224'
 #JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
 OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt_domainloss/$JOB_NAME"
-PREFIX="/storage/smuralidharan/data/"
+PREFIX="${SLURM_TMPDIR}/data/"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/'
 
