@@ -67,6 +67,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     optimizer_moco=None, loss_scaler_moco=None):
     model.train(True)
     moco.train(True)
+    weight_domain_loss = torch.Tensor([1, 1]).to(device)
+    criterion_domain = torch.nn.CrossEntropyLoss(
+        weight=weight_domain_loss).to(device)
+    
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter('lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
     metric_logger.add_meter('min_lr', utils.SmoothedValue(window_size=1, fmt='{value:.6f}'))
@@ -84,9 +88,13 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         if data_iter_step == len_iterable:
             break
         
-        feat_src_np, feat_tgt_np = samples.numpy(), samples_tgt.numpy()
-        src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
-        
+        #feat_src_np, feat_tgt_np = samples.numpy(), samples_tgt.numpy()
+        #src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
+        B = samples_tgt.shape[0]
+        samples_tgt = torch.split(samples_tgt, split_size_or_sections=2, dim=1)
+        samples_tgt = torch.cat(samples_tgt)
+        domain_targets = torch.cat([torch.zeros(B), torch.ones(B)])
+
         step = data_iter_step // update_freq
         if step >= num_training_steps_per_epoch:
             continue
@@ -102,6 +110,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
         samples = samples.to(device, non_blocking=True)
         targets = targets.to(device, non_blocking=True)
+        domain_targets = domain_targets.to(device, non_blocking=True)
 
 
         samples_tgt = samples_tgt.to(device, non_blocking=True)
@@ -158,16 +167,19 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             bool_masked_pos[pos1, pos2] = 0
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
         src_tubelet = model(src_tubelet, return_feats=True)
-        moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
+        #moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
+        moco_loss = 0.
         with torch.cuda.amp.autocast():
-            outputs_clip = model(clip_videos, mask=bool_masked_pos)
+            outputs_clip, domain_pred = model(clip_videos, mask=bool_masked_pos, training=True)
+            
             if target_mask.type(torch.int).sum() > 0: 
                 loss_target = criterion_target(outputs_clip[target_mask], target_labels[target_mask])
                 loss_target = (loss_target * target_conf[target_mask]).mean()
             else:
                 loss_target = torch.tensor(0.)
+            domain_loss = criterion_domain(clip_videos, domain_targets)
 
-        loss = loss+loss_target+(0.1*moco_loss)
+        loss = loss+loss_target+domain_loss#+(0.1*moco_loss)
         loss_value = loss.item()
         
         if not math.isfinite(loss_value):
@@ -211,6 +223,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             class_acc = None
         metric_logger.update(loss=loss_value)
         metric_logger.update(loss_target=loss_target.item())
+        metric_logger.update(domain_loss=domain_loss.item())
         metric_logger.update(class_acc=class_acc)
         metric_logger.update(class_acc_target=class_acc_target)
         metric_logger.update(moco_loss=moco_loss)

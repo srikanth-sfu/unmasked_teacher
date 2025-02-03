@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from timm.models.layers import drop_path, to_2tuple, trunc_normal_
 from timm.models.registry import register_model
 import torch.utils.checkpoint as checkpoint
+from torch.autograd import Function
 
 
 def _cfg(url='', **kwargs):
@@ -128,7 +129,16 @@ class Block(nn.Module):
             x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
         return x
 
+class GradReverse(Function):
+    @staticmethod
+    def forward(ctx, x, beta):
+        ctx.beta = beta
+        return x.view_as(x)
 
+    @staticmethod
+    def backward(ctx, grad_output):
+        grad_input = grad_output.neg() * ctx.beta
+        return grad_input, None
 class PatchEmbed(nn.Module):
     """ Image to Patch Embedding
     """
@@ -268,6 +278,8 @@ class VisionTransformer(nn.Module):
         self.fc_norm = norm_layer(embed_dim) if use_mean_pooling else None
         self.fc_dropout = nn.Dropout(p=fc_drop_rate) if fc_drop_rate > 0 else nn.Identity()
         self.head = nn.Linear(embed_dim, num_classes) if num_classes > 0 else nn.Identity()
+        
+
 
         if use_learnable_pos_emb and num_classes > 0:
             trunc_normal_(self.pos_embed, std=.02)
@@ -279,6 +291,10 @@ class VisionTransformer(nn.Module):
             self.head.bias.data.mul_(init_scale)
         if moco is not None:
             self.moco = moco
+
+        self.fc_feature_domain_video = nn.Linear(embed_dim, embed_dim)
+        self.fc_classifier_domain_video = nn.Linear(embed_dim, 2)
+        self.relu = nn.LeakyReLU(0.1)
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
@@ -325,14 +341,25 @@ class VisionTransformer(nn.Module):
             return self.fc_norm(x.mean(1))
         else:
             return x[:, 0]
+    
+    def forward_domain(self, feat_video):
+        feat_fc_domain_video = GradReverse.apply(feat_video, beta=0.75)
+        feat_fc_domain_video = self.fc_feature_domain_video(feat_fc_domain_video)
+        feat_fc_domain_video = self.relu(feat_fc_domain_video)
+        pred_fc_domain_video = self.fc_classifier_domain_video(feat_fc_domain_video)
+        return pred_fc_domain_video
 
-    def forward(self, x, mask=None, return_feats=False):
+    def forward(self, x, mask=None, return_feats=False, training=False):
         #return self.moco(self, x, tgt_tubelet)["nce_loss"].mean()
         x = self.forward_features(x, mask=mask)
         if return_feats:
             return x
+        x1 = self.forward_domain(x)
         x = self.head(self.fc_dropout(x))
-        return x
+        if training:
+            return x, x1
+        else:
+            return x
 
 
 @register_model

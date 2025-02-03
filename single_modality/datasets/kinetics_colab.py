@@ -141,7 +141,7 @@ class VideoClsColabDataset(Dataset):
             label_target = self.label_array_target[index_target]
             buffer = self.loadvideo_decord(sample, sample_rate_scale=scale_t) # T H W C
             buffer_target = self.loadvideo_decord(sample_target, sample_rate_scale=scale_t, video_ext=self.video_ext_target) # T H W C
-
+            buffer_no_transform = buffer
 
             if len(buffer) == 0:
                 while len(buffer) == 0:
@@ -165,7 +165,9 @@ class VideoClsColabDataset(Dataset):
             else:
                 buffer = self._aug_frame(buffer, args)
                 buffer_target = self.target_transform(buffer_target)
-            return buffer, buffer_target, self.label_array[index], index, {}, label_target
+                buffer_no_transform = self.target_transform(buffer_no_transform)
+                domain_data = torch.stack([buffer_target, buffer_no_transform])
+            return buffer, domain_data, self.label_array[index], index, {}, label_target
 
         elif self.mode == 'validation':
             args = self.args
