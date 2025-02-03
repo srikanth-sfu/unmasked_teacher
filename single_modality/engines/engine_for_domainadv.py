@@ -238,7 +238,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         metric_logger.update(grad_norm=grad_norm.detach())
 
         if log_writer is not None:
-            log_writer.update(loss=loss_value.detach(), head="loss")
+            log_writer.update(loss=loss_value, head="loss")
             log_writer.update(loss_target=loss_target.detach().item(), head="loss")
             log_writer.update(class_acc=class_acc.detach(), head="loss")
             log_writer.update(class_acc_target=class_acc_target.detach(), head="loss")
