@@ -169,7 +169,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                 loss_target = (loss_target * target_conf[target_mask]).mean()
             else:
                 loss_target = torch.tensor(0.)
-            domain_loss = criterion_domain(domain_pred, domain_targets[::2])
+            print(domain_targets.dtype, targets.dtype)
+            domain_loss = criterion_domain(domain_pred, domain_targets[::2].type(torch.long))
 
         loss = loss+loss_target+domain_loss#+(0.1*moco_loss)
         loss_value = loss.item()
