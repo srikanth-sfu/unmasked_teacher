@@ -174,7 +174,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             domain_loss = criterion_domain(domain_pred, domain_targets[idx].type(torch.long))
 
         loss = loss+loss_target+domain_loss#+(0.1*moco_loss)
-        loss_value = loss.item()
+        loss_value = loss.detach().item()
         
         if not math.isfinite(loss_value):
             print(loss_target, target_conf, target_mask, target_labels, outputs_clip)
@@ -216,8 +216,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         else:
             class_acc = None
         metric_logger.update(loss=loss_value)
-        metric_logger.update(loss_target=loss_target.item())
-        metric_logger.update(domain_loss=domain_loss.item())
+        metric_logger.update(loss_target=loss_target.detach().item())
+        metric_logger.update(domain_loss=domain_loss.detach().item())
         metric_logger.update(class_acc=class_acc)
         metric_logger.update(class_acc_target=class_acc_target)
         metric_logger.update(moco_loss=moco_loss)
