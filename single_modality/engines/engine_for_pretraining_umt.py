@@ -119,7 +119,7 @@ def train_one_epoch(
             else:
                 raise NotImplementedError
 
-        loss = loss_pixel + clip_loss_ratio * loss_clip + (0.1*moco_loss)
+        loss = loss_pixel + clip_loss_ratio * loss_clip + (0.001*moco_loss)
         loss_value = loss.item()
 
         if not math.isfinite(loss_value):
