@@ -225,7 +225,7 @@ class VideoMAE(torch.utils.data.Dataset):
             raw_images = torch.from_numpy(np.transpose(np.concatenate(raw_images), (1,0,2,3)))
             
             raw_images2 = [np.transpose(data_transform(np.array(x)[np.newaxis]), (0,3,1,2)) for x in images2]
-            raw_images2 = torch.from_numpy(np.transpose(np.concatenate(raw_images), (1,0,2,3)))
+            raw_images2 = torch.from_numpy(np.transpose(np.concatenate(raw_images2), (1,0,2,3)))
 
             raw = torch.stack([raw_images, raw_images2])
 
