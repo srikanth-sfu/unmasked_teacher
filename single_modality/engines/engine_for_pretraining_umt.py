@@ -49,6 +49,12 @@ def train_one_epoch(
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
         videos_raw = videos_raw[indices]
         feat_src_np, feat_tgt_np = videos_raw.numpy(), copy.deepcopy(videos_raw.numpy())
+        np.save(f"src_feat_{step}.npy", feat_src_np)
+        np.save(f"tgt_feat_{step}.npy", feat_tgt_np)
+        
+        if step == 3:
+            os._exit(1)
+        continue
         np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
         mean = [0.48145466, 0.4578275, 0.40821073]
