@@ -44,7 +44,7 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py 
     --opt_betas 0.9 0.95 \
     --warmup_epochs 10 \
     --save_ckpt_freq 1000 \
-    --epochs 100 \
+    --epochs 50 \
     --pin_mem \
     --log_dir ${OUTPUT_DIR} \
     --output_dir ${OUTPUT_DIR} \
