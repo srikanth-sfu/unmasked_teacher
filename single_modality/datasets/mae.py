@@ -153,6 +153,7 @@ class VideoMAE(torch.utils.data.Dataset):
                             video_name2 = '{}.{}'.format(directory2, self.video_ext)
 
                         video_name = os.path.join(self.prefix, video_name)
+                        video_name2 = os.path.join(self.prefix, video_name2)
                         if video_name.startswith('s3'):
                             video_bytes = self.client.get(video_name)
                             decord_vr = VideoReader(io.BytesIO(video_bytes),
