@@ -48,7 +48,8 @@ def train_one_epoch(
         num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
         videos_raw = videos_raw[indices]
-        feat_src_np, feat_tgt_np = videos_raw.numpy(), copy.deepcopy(videos_raw.numpy())
+        feat_src_np, feat_tgt_np = torch.split(videos_raw, split_size_or_sections=1, dim=1)
+        feat_src_np, feat_tgt_np = feat_src_np.squeeze(1).numpy(), feat_tgt_np.squeeze(1).numpy()
 
         np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)

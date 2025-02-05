@@ -91,7 +91,7 @@ class VideoMAE(torch.utils.data.Dataset):
                  use_decord=True,
                  lazy_init=False,
                  num_sample=1,
-                 ):
+                 tubelet_transform=None):
 
         super(VideoMAE, self).__init__()
         self.root = root
@@ -115,6 +115,7 @@ class VideoMAE(torch.utils.data.Dataset):
         self.transform = transform
         self.lazy_init = lazy_init
         self.num_sample = num_sample
+        self.tubelet_transform = tubelet_transform
 
         # sparse sampling, num_segments != 1
         if self.num_segments != 1:
@@ -133,19 +134,23 @@ class VideoMAE(torch.utils.data.Dataset):
                                    "Check your data directory (opt.data-dir)."))
 
     def __getitem__(self, index):
+        index2 = random.randint(0, len(self))
         while True:
             try:
                 images = None
                 if self.use_decord:
                     directory, target = self.clips[index]
+                    directory2, target2 = self.clips[index2]
                     if self.video_loader:
                         if '.' in directory.split('/')[-1]:
                             # data in the "setting" file already have extension, e.g., demo.mp4
                             video_name = directory
+                            video_name2 = directory2
                         else:
                             # data in the "setting" file do not have extension, e.g., demo
                             # So we need to provide extension (i.e., .mp4) to complete the file name.
                             video_name = '{}.{}'.format(directory, self.video_ext)
+                            video_name2 = '{}.{}'.format(directory2, self.video_ext)
 
                         video_name = os.path.join(self.prefix, video_name)
                         if video_name.startswith('s3'):
@@ -155,17 +160,28 @@ class VideoMAE(torch.utils.data.Dataset):
                                                     ctx=cpu(0))
                         else:
                             decord_vr = decord.VideoReader(video_name, num_threads=1, ctx=cpu(0))
+                            decord_vr2 = decord.VideoReader(video_name2, num_threads=1, ctx=cpu(0))
                         duration = len(decord_vr)
+                        duration2 = len(decord_vr2)
                         
                     segment_indices, skip_offsets = self._sample_train_indices(duration)
+                    segment_indices2, skip_offsets2 =self._sample_train_indices(duration2) 
                     images = self._video_TSN_decord_batch_loader(directory, decord_vr, duration, segment_indices, skip_offsets)
+                    images2 = self._video_TSN_decord_batch_loader(directory2, decord_vr2, duration2, segment_indices2, skip_offsets2)
                 
                 else:
                     video_name, total_frame, target = self.clips[index]
+                    video_name2, total_frame2, target2 = self.clips[index2]
+
                     video_name = os.path.join(self.prefix, video_name)
+                    video_name2 = os.path.join(self.prefix, video_name2)
 
                     segment_indices, skip_offsets = self._sample_train_indices(total_frame)
+                    segment_indices2, skip_offsets2 = self._sample_train_indices(total_frame2)
+                    
                     frame_id_list = self._get_frame_id_list(total_frame, segment_indices, skip_offsets)
+                    frame_id_list2 = self._get_frame_id_list(total_frame2, segment_indices2, skip_offsets2)
+                    
                     images = []
                     for idx in frame_id_list:
                         frame_fname = os.path.join(video_name, self.name_pattern.format(idx))
@@ -173,8 +189,16 @@ class VideoMAE(torch.utils.data.Dataset):
                         img_np = np.frombuffer(img_bytes, np.uint8)
                         img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
                         cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
-                        images.append(Image.fromarray(img))    
-                if images is not None:
+                        images.append(Image.fromarray(img))  
+                    images2 = []
+                    for idx in frame_id_list2:
+                        frame_fname = os.path.join(video_name2, self.name_pattern.format(idx))
+                        img_bytes = self.client.get(frame_fname)
+                        img_np = np.frombuffer(img_bytes, np.uint8)
+                        img = cv2.imdecode(img_np, cv2.IMREAD_COLOR)
+                        cv2.cvtColor(img, cv2.COLOR_BGR2RGB, img)
+                        images2.append(Image.fromarray(img))  
+                if images is not None and images2 is not None:
                     break
             except Exception as e:
                 print("Failed to load video from {} with error {}".format(
@@ -199,7 +223,13 @@ class VideoMAE(torch.utils.data.Dataset):
             ])
             raw_images = [np.transpose(data_transform(np.array(x)[np.newaxis]), (0,3,1,2)) for x in images]
             raw_images = torch.from_numpy(np.transpose(np.concatenate(raw_images), (1,0,2,3)))
-            return (process_data, mask, raw_images)
+            
+            raw_images2 = [np.transpose(data_transform(np.array(x)[np.newaxis]), (0,3,1,2)) for x in images2]
+            raw_images2 = torch.from_numpy(np.transpose(np.concatenate(raw_images), (1,0,2,3)))
+
+            raw = torch.stack([raw_images, raw_images2])
+
+            return (process_data, mask, raw)
 
     def __len__(self):
         return len(self.clips)
