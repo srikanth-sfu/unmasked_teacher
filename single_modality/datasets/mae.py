@@ -134,7 +134,7 @@ class VideoMAE(torch.utils.data.Dataset):
                                    "Check your data directory (opt.data-dir)."))
 
     def __getitem__(self, index):
-        index2 = random.randint(0, len(self))
+        index2 = random.randint(0, len(self)-1)
         while True:
             try:
                 images = None
