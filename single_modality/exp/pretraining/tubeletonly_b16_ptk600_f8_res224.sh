@@ -33,9 +33,9 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_tubelet_pretraining
     --clip_return_interval 1 \
     --clip_student_return_interval 1 \
     --tubelet_size 1 \
-    --lr 1.5e-4 \
+    --lr 1.5e-5 \
     --drop_path 0.1 \
-    --batch_size 7 \
+    --batch_size 16 \
     --num_segments 8 \
     --num_frames 8 \
     --sampling_rate 1 \

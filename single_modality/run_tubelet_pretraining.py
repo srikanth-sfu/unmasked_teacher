@@ -100,7 +100,7 @@ def get_args():
                         help='learning rate (default: 1.5e-4)')
     parser.add_argument('--warmup_lr', type=float, default=1e-6, metavar='LR',
                         help='warmup learning rate (default: 1e-6)')
-    parser.add_argument('--min_lr', type=float, default=1e-5, metavar='LR',
+    parser.add_argument('--min_lr', type=float, default=1e-6, metavar='LR',
                         help='lower lr bound for cyclic schedulers that hit 0 (1e-5)')
 
     parser.add_argument('--warmup_epochs', type=int, default=40, metavar='N',
