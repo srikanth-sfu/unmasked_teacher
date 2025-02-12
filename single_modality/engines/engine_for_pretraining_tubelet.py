@@ -60,7 +60,7 @@ def train_one_epoch(
         preds_dbg = (100.0 * out_dbg @ text_embed.T).softmax(dim=-1)
         _, preds_dbg = preds_dbg[0].topk(1)
         print(preds_dbg.cpu().numpy() == targets[:,0].numpy())
-        os._exit(1)
+        continue
         num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
         videos_raw = videos_raw[indices]
