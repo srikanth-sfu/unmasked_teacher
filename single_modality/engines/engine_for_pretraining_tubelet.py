@@ -57,7 +57,7 @@ def train_one_epoch(
         videos_clip = torch.from_numpy(videos_clip).to(device)
         out_dbg = model_dbg.encode_image(videos_clip).cpu()
         out_dbg /= out_dbg.norm(dim=-1, keepdim=True)
-        preds_dbg = (100.0 * out_dbg @ text_embed.T).softmax(dim=-1)
+        preds_dbg = (100.0 * out_dbg.type(torch.float16) @ text_embed.T).softmax(dim=-1)
         _, preds_dbg = preds_dbg[0].topk(1)
         print(preds_dbg.cpu().numpy() == targets[:,0].numpy())
         continue
