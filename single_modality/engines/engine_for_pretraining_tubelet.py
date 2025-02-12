@@ -51,6 +51,9 @@ def train_one_epoch(
         model, preprocess = clip.load("ViT-B/32", "cpu")
         model.to(device)
         videos_clip = videos_raw[:,0,:,0].cpu().numpy()
+        videos_clip = np.permute(videos_clip, (0,2,3,1))
+        videos_clip = [preprocess(videos_clip[i]) for i in range(videos_clip.shape[0])]
+        videos_clip = np.stack(videos_clip)
         print(videos_clip.shape)
         os._exit(1)
         num_rows = 7
