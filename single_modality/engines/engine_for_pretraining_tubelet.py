@@ -11,6 +11,7 @@ import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from datasets.video_transforms import Compose, Normalize 
 import clip
+from PIL import Image
 
 def train_one_epoch(
         model: torch.nn.Module, data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -45,7 +46,12 @@ def train_one_epoch(
                     param_group["weight_decay"] = wd_schedule_values[it]
 
         videos, bool_masked_pos, videos_raw, targets = batch
-        print(targets.shape, videos_raw.shape)
+        
+        text_embed = torch.from_numpy(np.load("video_splits/dailyda_classnames.npy"))
+        model, preprocess = clip.load("ViT-B/32", "cpu")
+        model.to(device)
+        videos_clip = videos_raw[:,0,:,0].cpu().numpy()
+        print(videos_clip.shape)
         os._exit(1)
         num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
