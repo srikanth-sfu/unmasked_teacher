@@ -10,7 +10,7 @@ import copy
 import numpy as np
 from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from datasets.video_transforms import Compose, Normalize 
-
+import clip
 
 def train_one_epoch(
         model: torch.nn.Module, data_loader: Iterable, optimizer: torch.optim.Optimizer,
@@ -112,7 +112,7 @@ def train_one_epoch(
             src_tubelet = model(src_tubelet, unmasked)
             moco_loss = moco(model.module, src_tubelet, tgt_tubelet, unmasked)["nce_loss"].mean()
 
-        loss = (0.00001*moco_loss)
+        loss = (0.001*moco_loss)
         loss_value = loss.item()
         loss_pixel = torch.tensor(0.)
         loss_clip = torch.tensor(0.)
