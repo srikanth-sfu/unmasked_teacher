@@ -48,14 +48,18 @@ def train_one_epoch(
         videos, bool_masked_pos, videos_raw, targets = batch
         
         text_embed = torch.from_numpy(np.load("video_splits/dailyda_classnames.npy"))
-        model, preprocess = clip.load("ViT-B/32", "cpu")
-        model.to(device)
+        model_dbg, preprocess = clip.load("ViT-B/32", "cpu")
+        model_dbg.to(device)
         videos_clip = videos_raw[:,0,:,0]
         videos_clip = torch.permute(videos_clip, (0,2,3,1)).cpu().numpy().astype('uint8')
-        print(videos_clip.max(), videos_clip.min())
         videos_clip = [preprocess(Image.fromarray(videos_clip[i])) for i in range(videos_clip.shape[0])]
         videos_clip = np.stack(videos_clip)
-        print(videos_clip.shape)
+        videos_clip = torch.from_numpy(videos_clip).to(device)
+        out_dbg = model_dbg.encode_image(videos_clip).cpu()
+        out_dbg /= out_dbg.norm(dim=-1, keepdim=True)
+        preds_dbg = (100.0 * out_dbg @ text_embed.T).softmax(dim=-1)
+        _, preds_dbg = preds_dbg[0].topk(1)
+        print(preds_dbg.cpu().numpy() == targets[:,0].numpy())
         os._exit(1)
         num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
