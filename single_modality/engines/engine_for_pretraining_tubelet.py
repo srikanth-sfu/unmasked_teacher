@@ -51,8 +51,9 @@ def train_one_epoch(
         model, preprocess = clip.load("ViT-B/32", "cpu")
         model.to(device)
         videos_clip = videos_raw[:,0,:,0]
-        videos_clip = torch.permute(videos_clip, (0,2,3,1)).cpu().numpy()
-        videos_clip = [preprocess(videos_clip[i]) for i in range(videos_clip.shape[0])]
+        videos_clip = torch.permute(videos_clip, (0,2,3,1)).cpu().numpy().astype('uint8')
+        print(videos_clip.max(), videos_clip.min())
+        videos_clip = [preprocess(Image.from_array(videos_clip[i])) for i in range(videos_clip.shape[0])]
         videos_clip = np.stack(videos_clip)
         print(videos_clip.shape)
         os._exit(1)
