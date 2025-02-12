@@ -50,8 +50,8 @@ def train_one_epoch(
         text_embed = torch.from_numpy(np.load("video_splits/dailyda_classnames.npy"))
         model, preprocess = clip.load("ViT-B/32", "cpu")
         model.to(device)
-        videos_clip = videos_raw[:,0,:,0].cpu().numpy()
-        videos_clip = np.permute(videos_clip, (0,2,3,1))
+        videos_clip = videos_raw[:,0,:,0]
+        videos_clip = torch.permute(videos_clip, (0,2,3,1)).cpu().numpy()
         videos_clip = [preprocess(videos_clip[i]) for i in range(videos_clip.shape[0])]
         videos_clip = np.stack(videos_clip)
         print(videos_clip.shape)
