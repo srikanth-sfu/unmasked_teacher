@@ -205,7 +205,8 @@ class VideoMAE(torch.utils.data.Dataset):
                 print("Failed to load video from {} with error {}".format(
                     video_name, e))
             index = random.randint(0, len(self.clips) - 1)
-       
+        targets = np.array([target,target2], dtype=np.float32)
+        targets = torch.from_numpy(targets).type(torch.long)
         if self.num_sample > 1:
             process_data_list = []
             mask_list = []
@@ -214,9 +215,8 @@ class VideoMAE(torch.utils.data.Dataset):
                 process_data = process_data.view((self.new_length, 3) + process_data.size()[-2:]).transpose(0, 1)
                 process_data_list.append(process_data)
                 mask_list.append(mask)
-            print(target, target2)
-            os._exit(1)
-            return process_data_list, mask_list
+            
+            return process_data_list, mask_list, targets
         else:
             process_data, mask = self.transform((images, None)) # T*C,H,W
             process_data = process_data.view((self.new_length, 3) + process_data.size()[-2:]).transpose(0, 1)  # T*C,H,W -> T,C,H,W -> C,T,H,W
@@ -231,9 +231,8 @@ class VideoMAE(torch.utils.data.Dataset):
             raw_images2 = torch.from_numpy(np.transpose(np.concatenate(raw_images2), (1,0,2,3)))
 
             raw = torch.stack([raw_images, raw_images2])
-            print(target, target2)
-            os._exit(1)
-            return (process_data, mask, raw)
+            
+            return (process_data, mask, raw, targets)
 
     def __len__(self):
         return len(self.clips)

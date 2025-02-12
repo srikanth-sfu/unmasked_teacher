@@ -44,7 +44,9 @@ def train_one_epoch(
                 if wd_schedule_values is not None and param_group["weight_decay"] > 0:
                     param_group["weight_decay"] = wd_schedule_values[it]
 
-        videos, bool_masked_pos, videos_raw = batch
+        videos, bool_masked_pos, videos_raw, targets = batch
+        print(targets.shape)
+        os._exit(1)
         num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
         videos_raw = videos_raw[indices]
