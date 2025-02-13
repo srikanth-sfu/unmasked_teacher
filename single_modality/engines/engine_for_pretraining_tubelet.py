@@ -77,6 +77,7 @@ def train_one_epoch(
         cur = (preds_dbg.cpu().numpy()[:,0] == targets[:,1].numpy()).sum()
         acc_dbg, total_dbg = acc_dbg+cur.item(), total_dbg+preds_dbg.shape[0] 
         acc_pc2 = 100*acc_dbg/total_dbg
+        print("ACCS",acc_pc1,acc_pc2)
         metric_logger.update("acc1", acc_pc1)
         metric_logger.update("acc2", acc_pc2)
         
