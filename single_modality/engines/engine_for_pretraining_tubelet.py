@@ -50,7 +50,13 @@ def train_one_epoch(
         text_embed = torch.from_numpy(np.load("video_splits/dailyda_classnames.npy"))
         model_dbg, preprocess = clip.load("ViT-B/32", "cpu")
         model_dbg.to(device)
-        videos_clip = videos_raw[:,0,:,0]
+        #videos_clip = videos_raw[:,0,:,0]
+        import random
+        idxs = np.array([random.randint(0,videos_raw.shape[3]-1) for _ in range(videos_raw.shape[0])])
+        videos_clip = videos_raw.cpu().numpy()
+        videos_clip = videos_clip[np.arange(videos_raw.shape[0]),0,:,idxs,:,:]
+        videos_clip = torch.from_numpy(videos_clip).to(device)
+        
         videos_clip = torch.permute(videos_clip, (0,2,3,1)).cpu().numpy().astype('uint8')
         videos_clip = [preprocess(Image.fromarray(videos_clip[i])) for i in range(videos_clip.shape[0])]
         videos_clip = np.stack(videos_clip)
@@ -64,8 +70,12 @@ def train_one_epoch(
         metric_logger.update(min_lr=10)
         acc_dbg, total_dbg = acc_dbg+cur.item(), total_dbg+preds_dbg.shape[0] 
         acc_pc1 = 100*acc_dbg/total_dbg
-
-        videos_clip = videos_raw[:,1,:,0]
+        import random
+        idxs = np.array([random.randint(0,videos_raw.shape[3]-1) for _ in range(videos_raw.shape[0])])
+        #videos_clip = videos_raw[:,1,:,0]
+        videos_clip = videos_raw.cpu().numpy()
+        videos_clip = videos_clip[np.arange(videos_raw.shape[0]),1,:,idxs,:,:]
+        videos_clip = torch.from_numpy(videos_clip).to(device)
         videos_clip = torch.permute(videos_clip, (0,2,3,1)).cpu().numpy().astype('uint8')
         videos_clip = [preprocess(Image.fromarray(videos_clip[i])) for i in range(videos_clip.shape[0])]
         videos_clip = np.stack(videos_clip)
