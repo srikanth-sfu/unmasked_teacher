@@ -61,6 +61,7 @@ def train_one_epoch(
         _, preds_dbg = preds_dbg[0].topk(1)
         print(preds_dbg.cpu().numpy() == targets[:,0].numpy())
         metric_logger.update(lr=10)
+        metric_logger.update(min_lr=10)
         continue
         num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
