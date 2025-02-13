@@ -59,10 +59,11 @@ def train_one_epoch(
         out_dbg /= out_dbg.norm(dim=-1, keepdim=True)
         preds_dbg = (100.0 * out_dbg @ text_embed.type(torch.float32).T).softmax(dim=-1)
         _, preds_dbg = preds_dbg.topk(1)
-        cur = (preds_dbg.cpu().numpy() == targets[:,0].numpy()).sum()
+        cur = (preds_dbg.cpu().numpy() == targets[:,0].numpy())
         print(cur, preds_dbg.cpu().numpy().shape)
         metric_logger.update(lr=10)
         metric_logger.update(min_lr=10)
+        continue
         acc_dbg, total_dbg = acc_dbg+cur.item(), total_dbg+preds_dbg.shape[0] 
         print("ACC", 100*acc_dbg/total_dbg)
         continue
