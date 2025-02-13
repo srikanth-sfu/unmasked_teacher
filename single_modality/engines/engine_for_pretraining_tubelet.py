@@ -59,11 +59,29 @@ def train_one_epoch(
         out_dbg /= out_dbg.norm(dim=-1, keepdim=True)
         preds_dbg = (100.0 * out_dbg @ text_embed.type(torch.float32).T).softmax(dim=-1)
         _, preds_dbg = preds_dbg.topk(1)
-        cur = (preds_dbg.cpu().numpy()[:,0] == targets[:,0].numpy())
+        cur = (preds_dbg.cpu().numpy()[:,0] == targets[:,0].numpy()).sum()
         metric_logger.update(lr=10)
         metric_logger.update(min_lr=10)
         acc_dbg, total_dbg = acc_dbg+cur.item(), total_dbg+preds_dbg.shape[0] 
-        print("ACC", 100*acc_dbg/total_dbg)
+        acc_pc1 = 100*acc_dbg/total_dbg
+
+        videos_clip = videos_raw[:,1,:,0]
+        videos_clip = torch.permute(videos_clip, (0,2,3,1)).cpu().numpy().astype('uint8')
+        videos_clip = [preprocess(Image.fromarray(videos_clip[i])) for i in range(videos_clip.shape[0])]
+        videos_clip = np.stack(videos_clip)
+        videos_clip = torch.from_numpy(videos_clip).to(device)
+        out_dbg = model_dbg.encode_image(videos_clip).cpu()
+        out_dbg /= out_dbg.norm(dim=-1, keepdim=True)
+        preds_dbg = (100.0 * out_dbg @ text_embed.type(torch.float32).T).softmax(dim=-1)
+        _, preds_dbg = preds_dbg.topk(1)
+        cur = (preds_dbg.cpu().numpy()[:,0] == targets[:,1].numpy()).sum()
+        acc_dbg, total_dbg = acc_dbg+cur.item(), total_dbg+preds_dbg.shape[0] 
+        acc_pc2 = 100*acc_dbg/total_dbg
+        metric_logger.update("acc1", acc_pc1)
+        metric_logger.update("acc2", acc_pc2)
+        
+
+
         continue
         num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
