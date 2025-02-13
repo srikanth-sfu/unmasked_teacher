@@ -61,7 +61,8 @@ def train_one_epoch(
         videos_clip = [preprocess(Image.fromarray(videos_clip[i])) for i in range(videos_clip.shape[0])]
         videos_clip = np.stack(videos_clip)
         videos_clip = torch.from_numpy(videos_clip).to(device)
-        out_dbg = model_dbg.encode_image(videos_clip).cpu()
+        with torch.no_grad():
+            out_dbg = model_dbg.encode_image(videos_clip).cpu()
         out_dbg /= out_dbg.norm(dim=-1, keepdim=True)
         preds_dbg = (100.0 * out_dbg @ text_embed.type(torch.float32).T).softmax(dim=-1)
         _, preds_dbg = preds_dbg.topk(1)
@@ -80,7 +81,8 @@ def train_one_epoch(
         videos_clip = [preprocess(Image.fromarray(videos_clip[i])) for i in range(videos_clip.shape[0])]
         videos_clip = np.stack(videos_clip)
         videos_clip = torch.from_numpy(videos_clip).to(device)
-        out_dbg = model_dbg.encode_image(videos_clip).cpu()
+        with torch.no_grad():
+            out_dbg = model_dbg.encode_image(videos_clip).cpu()
         out_dbg /= out_dbg.norm(dim=-1, keepdim=True)
         preds_dbg = (100.0 * out_dbg @ text_embed.type(torch.float32).T).softmax(dim=-1)
         _, preds_dbg = preds_dbg.topk(1)
@@ -88,6 +90,8 @@ def train_one_epoch(
         acc_dbg, total_dbg = acc_dbg+cur.item(), total_dbg+preds_dbg.shape[0] 
         acc_pc2 = 100*acc_dbg/total_dbg
         print("ACCS",acc_pc1,acc_pc2)
+        del videos_clip, out_dbg, preds_dbg  # Delete unused tensors
+        torch.cuda.empty_cache()  # Free up GPU memory
 
         continue
         num_rows = 7
