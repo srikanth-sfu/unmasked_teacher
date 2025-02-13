@@ -34,7 +34,7 @@ def train_one_epoch(
         loss_func_clip = nn.MSELoss()
     elif clip_loss_type == 'smooth_l1':
         loss_func_clip = nn.SmoothL1Loss()
-
+    acc_dbg, total_dbg = 0, 0 
     for step, batch in enumerate(metric_logger.log_every(data_loader, print_freq, header)):
         # assign learning rate & weight decay for each step
         it = start_steps + step  # global training iteration
@@ -59,9 +59,11 @@ def train_one_epoch(
         out_dbg /= out_dbg.norm(dim=-1, keepdim=True)
         preds_dbg = (100.0 * out_dbg @ text_embed.type(torch.float32).T).softmax(dim=-1)
         _, preds_dbg = preds_dbg[0].topk(1)
-        print(preds_dbg.cpu().numpy() == targets[:,0].numpy())
+        cur = (preds_dbg.cpu().numpy() == targets[:,0].numpy()).sum()
         metric_logger.update(lr=10)
         metric_logger.update(min_lr=10)
+        acc_dbg, total_dbg = acc_dbg+cur.item(), total_dbg+preds_dbg.shape[0] 
+        print("ACC", 100*acc_dbg/total_dbg)
         continue
         num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
