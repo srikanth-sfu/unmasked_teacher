@@ -60,7 +60,7 @@ def train_one_epoch(
         preds_dbg = (100.0 * out_dbg @ text_embed.type(torch.float32).T).softmax(dim=-1)
         _, preds_dbg = preds_dbg.topk(1)
         cur = (preds_dbg.cpu().numpy() == targets[:,0].numpy())
-        print(cur, cur.sum(), cur.shape, preds_dbg.cpu().numpy().shape)
+        print(cur, cur.sum(), cur.shape, targets[:,0].numpy().shape, preds_dbg.cpu().numpy().shape)
         metric_logger.update(lr=10)
         metric_logger.update(min_lr=10)
         continue
