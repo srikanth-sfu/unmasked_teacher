@@ -52,9 +52,9 @@ def train_one_epoch(
         model_dbg.to(device)
         #videos_clip = videos_raw[:,0,:,0]
         import random
-        idxs = np.array([random.randint(0,videos_raw.shape[3]-1) for _ in range(videos_raw.shape[0])])
-        videos_clip = videos_raw.cpu().numpy()
-        videos_clip = videos_clip[np.arange(videos_raw.shape[0]),0,:,idxs,:,:]
+        videos_clip = videos_raw.cpu().numpy()[:,0]
+        videos_clip = np.split(videos_clip, videos_clip.shape[2], axis=2)
+        videos_clip = np.concatenate([x[:,:,0] for x in videos_clip])
         videos_clip = torch.from_numpy(videos_clip).to(device)
         
         videos_clip = torch.permute(videos_clip, (0,2,3,1)).cpu().numpy().astype('uint8')
@@ -65,7 +65,11 @@ def train_one_epoch(
             out_dbg = model_dbg.encode_image(videos_clip).cpu()
         out_dbg /= out_dbg.norm(dim=-1, keepdim=True)
         preds_dbg = (100.0 * out_dbg @ text_embed.type(torch.float32).T).softmax(dim=-1)
-        _, preds_dbg = preds_dbg.topk(1)
+        scores, _ = preds_dbg.topk(1)
+        scores = torch.split(scores, videos_raw.shape[0])
+        scores = torch.stack(scores,dim=1).mean(dim=1)
+        _, preds_dbg = scores.topk(1)
+        
         cur = (preds_dbg.cpu().numpy()[:,0] == targets[:,0].numpy()).sum()
         metric_logger.update(lr=10)
         metric_logger.update(min_lr=10)
