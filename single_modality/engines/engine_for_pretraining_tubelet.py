@@ -115,7 +115,7 @@ def train_one_epoch(
             #moco_loss = moco(model.module, src_tubelet, tgt_tubelet, unmasked)["nce_loss"].mean()
             moco_loss = moco(model, src_tubelet, tgt_tubelet, unmasked)["nce_loss"].mean()
 
-        loss = (0.001*moco_loss)
+        loss = (0.1*moco_loss)
         loss_value = loss.item()
         loss_pixel = torch.tensor(0.)
         loss_clip = torch.tensor(0.)
