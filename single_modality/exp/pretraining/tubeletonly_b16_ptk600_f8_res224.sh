@@ -12,7 +12,8 @@ DATA_PATH='video_splits/kinetics600_dailyda_train.csv'
 #         --ntasks=${GPUS} \
 #         --ntasks-per-node=${GPUS_PER_NODE} \
 #         --cpus-per-task=${CPUS_PER_TASK} \
-python -u -m torch.distributed.launch --nproc_per_node 4 run_tubelet_pretraining.py \
+#python -u -m torch.distributed.launch --nproc_per_node 4 run_tubelet_pretraining.py \
+CUDA_VISIBLE_DEVICES=0 python -u run_tubelet_pretraining.py \
     --data_path ${DATA_PATH} \
     --prefix ${SLURM_TMPDIR}/data/ \
     --num_sample 1 \
@@ -44,7 +45,7 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_tubelet_pretraining
     --opt_betas 0.9 0.95 \
     --warmup_epochs 10 \
     --save_ckpt_freq 1000 \
-    --epochs 50 \
+    --epochs 25 \
     --pin_mem \
     --log_dir ${OUTPUT_DIR} \
     --output_dir ${OUTPUT_DIR} \

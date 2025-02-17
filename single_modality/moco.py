@@ -180,8 +180,8 @@ class MoCo(nn.Module, TrainStepMixin):
             # # compute key features
             with torch.no_grad():
                 self._momentum_update_key_encoder(backbone=model)
-                im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
-                tgt_tubelet = self.key_encoder_forward(im_k, mask)
+                #im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
+                tgt_tubelet = self.key_encoder_forward(k_in, mask)
                 #tgt_tubelet = tgt_tubelet[0:1]
 #                k = tgt_tubelet.reshape(-1,tgt_tubelet.shape[-2], tgt_tubelet.shape[-1])
 #                k = k + self.positional_encoding
@@ -198,7 +198,7 @@ class MoCo(nn.Module, TrainStepMixin):
                 k = nn.functional.normalize(k, dim=1).reshape(NS, B, -1)
                 k = torch.transpose(k, 1, 0)
                 k = k.contiguous()
-                k = self._batch_unshuffle_ddp(k, idx_unshuffle)
+                #k = self._batch_unshuffle_ddp(k, idx_unshuffle)
                 
 
             # compute logits

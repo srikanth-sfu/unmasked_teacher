@@ -355,11 +355,13 @@ def init_distributed_mode_new(args):
         args.world_size = int(os.environ['WORLD_SIZE'])
         print(f"RANK and WORLD_SIZE in environ: {args.rank}/{args.world_size}")
     else:
+        print('Not using distributed mode')
+        args.distributed = False
+        return
         args.rank = -1
         args.world_size = -1
     args.gpu = args.local_rank
     args.distributed = True
-    print(args.rank, args.world_size, args.local_rank, os.environ["LOCAL_RANK"])
     torch.cuda.set_device(args.local_rank)
     args.dist_backend = 'nccl'
     print('| distributed init (rank {}): {}, gpu {}'.format(
