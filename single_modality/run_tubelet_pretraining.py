@@ -396,12 +396,6 @@ def main(args):
         model_without_ddp = model.module
         moco_model_without_ddp = moco.module
         teacher_model = torch.nn.parallel.DistributedDataParallel(teacher_model, device_ids=[args.gpu], find_unused_parameters=False)
-    else:
-        model = torch.nn.parallel.DataParallel(model)
-        moco = torch.nn.parallel.DataParallel(moco)
-        model_without_ddp = model.module
-        moco_model_without_ddp = moco.module
-        teacher_model = torch.nn.parallel.DataParallel(teacher_model)
     
     optimizer = create_optimizer(args, model_without_ddp, additional_params=moco_model_without_ddp)
     loss_scaler = NativeScaler()
