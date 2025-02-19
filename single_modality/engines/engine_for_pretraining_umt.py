@@ -44,25 +44,12 @@ def train_one_epoch(
                 if wd_schedule_values is not None and param_group["weight_decay"] > 0:
                     param_group["weight_decay"] = wd_schedule_values[it]
 
-        videos, bool_masked_pos, videos_raw = batch
+        videos, bool_masked_pos, videos_raw, _ = batch
         num_rows = 7
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
         videos_raw = videos_raw[indices]
-        feat_src_np, feat_tgt_np = torch.split(videos_raw, split_size_or_sections=1, dim=1)
-        feat_src_np, feat_tgt_np = feat_src_np.squeeze(1).numpy(), feat_tgt_np.squeeze(1).numpy()
-
         
-        src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
-        mean = [0.48145466, 0.4578275, 0.40821073]
-        std = [0.26862954, 0.26130258, 0.27577711]
-        mean = torch.as_tensor(mean)
-        std = torch.as_tensor(std)
-        src_tubelet.sub_(mean[None, :, None, None, None]).div_(std[None, :, None, None, None])
-        tgt_tubelet.sub_(mean[None, :, None, None, None]).div_(std[None, :, None, None, None])
         videos = videos.to(device, non_blocking=True)
-        src_tubelet = src_tubelet.to(device, non_blocking=True)
-        tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
-
         if mask_type in ['attention']:
             bool_masked_pos = None
         else:
@@ -109,9 +96,6 @@ def train_one_epoch(
 
         with torch.cuda.amp.autocast():
             outputs_clip = model(videos, bool_masked_pos)
-            unmasked = torch.zeros((src_tubelet.shape[0], bool_masked_pos.shape[-1])).type(torch.bool).to(device)
-            src_tubelet = model(src_tubelet, unmasked)
-            moco_loss = moco(model.module, src_tubelet, tgt_tubelet, unmasked)["nce_loss"].mean()
             loss_pixel = torch.zeros(1).type_as(outputs_clip).to(outputs_clip.device)
             # align CLIP
             if clip_loss_type == 'l2':
@@ -121,7 +105,7 @@ def train_one_epoch(
             else:
                 raise NotImplementedError
 
-        loss = loss_pixel + clip_loss_ratio * loss_clip + (0.001*moco_loss)
+        loss = loss_pixel + clip_loss_ratio * loss_clip
         loss_value = loss.item()
 
         if not math.isfinite(loss_value):
@@ -138,7 +122,6 @@ def train_one_epoch(
         torch.cuda.synchronize()
 
         metric_logger.update(loss=loss_value)
-        metric_logger.update(moco_loss=moco_loss.item())
         metric_logger.update(loss_pixel=loss_pixel.item())
         metric_logger.update(loss_clip=loss_clip.item())
         metric_logger.update(loss_scale=loss_scale_value)
