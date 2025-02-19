@@ -416,6 +416,8 @@ def main(args):
     print(f"Mask ratio: {args.mask_ratio}")
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
+        if epoch >= 14:
+            break
         if args.distributed:
             data_loader_train.sampler.set_epoch(epoch)
         if log_writer is not None:
