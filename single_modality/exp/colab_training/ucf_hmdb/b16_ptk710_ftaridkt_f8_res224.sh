@@ -44,8 +44,8 @@ python -m torch.distributed.launch --nproc_per_node 4 run_collaborative_tuning.p
         --split ',' \
         --mixup 0.0 \
         --cutmix 0.0 \
-        --train_anno_path  \
-        --train_anno_path_target arid_train.csv \
+        --train_anno_path arid_train.csv \
+        --train_anno_path_target kinetics600_dailyda_train.csv \
         --val_anno_path arid_val.csv \
         --val_anno_path_target kinetics600_dailyda_val.csv \
         --test_anno_path kinetics600_dailyda_val.csv \

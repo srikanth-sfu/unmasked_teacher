@@ -178,9 +178,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         if loss_scaler is None:
             loss /= update_freq
             model.backward(loss)
-            moco.backward()
             model.step()
-            moco.step()
             if (data_iter_step + 1) % update_freq == 0:
                 # model.zero_grad()
                 # Deepspeed will call step() & model.zero_grad() automatic
@@ -193,7 +191,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             is_second_order = hasattr(optimizer, 'is_second_order') and optimizer.is_second_order
             loss /= update_freq
             grad_norm = loss_scaler(loss, optimizer, clip_grad=max_norm,
-                                    parameters=list(model.parameters())+list(moco.parameters()), create_graph=is_second_order,
+                                    parameters=list(model.parameters()), create_graph=is_second_order,
                                     update_grad=(data_iter_step + 1) % update_freq == 0)
 
             if (data_iter_step + 1) % update_freq == 0:
