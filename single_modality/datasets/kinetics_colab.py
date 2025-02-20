@@ -249,9 +249,13 @@ class VideoClsColabDataset(Dataset):
         # T H W C -> C T H W.
         buffer = buffer.permute(3, 0, 1, 2)
         # Perform data augmentation.
+#        scl, asp = (
+#            [0.08, 1.0],
+#            [0.75, 1.3333],
+#        )
         scl, asp = (
-            [0.08, 1.0],
-            [0.75, 1.3333],
+            [1.0, 1.0],
+            [1.0, 1.0],
         )
 
         buffer = spatial_sampling(
@@ -260,7 +264,7 @@ class VideoClsColabDataset(Dataset):
             min_scale=256,
             max_scale=320,
             crop_size=self.crop_size,
-            random_horizontal_flip=False if args.data_set == 'SSV2' else True ,
+            random_horizontal_flip=False if args.data_set == 'SSV2' else False ,
             inverse_uniform_sampling=False,
             aspect_ratio=asp,
             scale=scl,
