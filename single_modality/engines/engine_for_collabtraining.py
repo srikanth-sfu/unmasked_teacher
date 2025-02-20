@@ -84,8 +84,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         if data_iter_step == len_iterable:
             break
         
-        feat_src_np, feat_tgt_np = samples.numpy(), samples_tgt.numpy()
-        src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
         
         step = data_iter_step // update_freq
         if step >= num_training_steps_per_epoch:
@@ -105,9 +103,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
 
 
         samples_tgt = samples_tgt.to(device, non_blocking=True)
-
-        src_tubelet = src_tubelet.to(device, non_blocking=True)
-        tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
 
 
         if mixup_fn is not None:
