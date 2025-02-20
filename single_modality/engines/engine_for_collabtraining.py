@@ -153,7 +153,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             bool_masked_pos[pos1, pos2] = 0
             bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
         with torch.cuda.amp.autocast():
-            src_tubelet = model(src_tubelet, return_feats=True)
             #moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
             outputs_clip = model(clip_videos, mask=bool_masked_pos)
             if target_mask.type(torch.int).sum() > 0: 
