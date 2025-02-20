@@ -1,7 +1,7 @@
 export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
-JOB_NAME='tubelet_b16_k600_dailyda'
+JOB_NAME='tubelet_b16_arid_dailyda'
 OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/pretrain/$JOB_NAME"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/arid_train.csv'

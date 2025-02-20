@@ -1,7 +1,7 @@
 export MASTER_PORT=$((12000 + $RANDOM % 20000))
 export OMP_NUM_THREADS=1
 
-JOB_NAME='tubelet_umt_b16_k600_dailyda'
+JOB_NAME='tubelet_umt_b16_arid_dailyda'
 OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt/pretrain/$JOB_NAME"
 LOG_DIR="./logs/${JOB_NAME}"
 DATA_PATH='video_splits/arid_train.csv'
@@ -21,7 +21,7 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_umt_pretraining.py 
     --mask_type 'attention'  \
     --mask_ratio 0.8 \
     --model 'pretrain_umt_base_patch16_224' \
-    --k710_weights /project/def-mpederso/smuralid/checkpoints/umt/pretrain/tubelet_b16_k600_dailyda/checkpoint-latest.pth \
+    --k710_weights /project/def-mpederso/smuralid/checkpoints/umt/pretrain/tubelet_b16_arid_dailyda/checkpoint-latest.pth \
     --clip_teacher 'clip_b16' \
     --clip_loss_ratio 1 \
     --clip_loss_type 'l2' \
