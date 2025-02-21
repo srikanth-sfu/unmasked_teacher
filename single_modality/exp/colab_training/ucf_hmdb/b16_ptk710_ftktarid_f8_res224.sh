@@ -2,7 +2,7 @@ export MASTER_PORT=$((12000 + $RANDOM % 21000))
 export OMP_NUM_THREADS=1
 
 #MODEL_PATH='/home/ens/smuralidharan/checkpoints/umt/src_finetune/baseline_b16_ktarid_f8_res224/'
-MODEL_PATH='/project/def-mpederso/smuralid/checkpoints/umt/src_finetune/tubelet_s1_b16_aridkt_f8_res224/'
+MODEL_PATH='/project/def-mpederso/smuralid/checkpoints/umt/src_finetune/tubelet_s1_b16_ktarid_f8_res224/'
 JOB_NAME='umt_s3_b16_kt_arid_f8_res224'
 #JOB_NAME='baseline_b16_ucf_hmdb_f8_res224'
 OUTPUT_DIR="/project/def-mpederso/smuralid/checkpoints/umt_tubelet/colabtrainonly/$JOB_NAME"
