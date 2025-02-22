@@ -157,7 +157,7 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             pos1 = torch.arange(BT).view(-1, 1).repeat(1, N_vis)
             pos2 = importance[:, :N_vis]
             bool_masked_pos[pos1, pos2] = 0
-            bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
+            bool_masked_pos = bool_masked_pos.view(B*2, -1).to(torch.bool)
         #src_tubelet = model(src_tubelet, return_feats=True)
         #moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
         moco_loss = 0.
