@@ -681,13 +681,13 @@ def main(args, ds_init):
         #         with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
         #             f.write(json.dumps(log_stats) + "\n")
         #             f.close()
-            if max_accuracy_tgt < top1:
-                max_accuracy_tgt = top1
-                if args.output_dir and args.save_ckpt:
-                    utils.save_latest_model(
-                        args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
-                        loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema,
-                        max_accuracy_src=max_accuracy_src, max_accuracy_tgt=max_accuracy_tgt)
+        if max_accuracy_tgt < top1:
+            max_accuracy_tgt = top1
+            if args.output_dir and args.save_ckpt:
+                utils.save_latest_model(
+                    args=args, model=model, model_without_ddp=model_without_ddp, optimizer=optimizer,
+                    loss_scaler=loss_scaler, epoch=epoch, model_name='best', model_ema=model_ema,
+                    max_accuracy_src=max_accuracy_src, max_accuracy_tgt=max_accuracy_tgt)
         print(f'Max accuracy -- src val: {max_accuracy_src:.2f}%')
         print(f'Max accuracy -- tgt val: {max_accuracy_tgt:.2f}%')
 
