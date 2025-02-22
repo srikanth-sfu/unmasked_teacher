@@ -139,10 +139,10 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
             clip_videos = samples_tgt
             
             with torch.cuda.amp.autocast():
-                norm_clip, attn = teacher_model(clip_videos[B:])
+                norm_clip, attn = teacher_model(clip_videos)
                 norm_clip = norm_clip/norm_clip.norm(dim=1, keepdim=True)
                 # norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)#.reshape(-1,norm_clip.shape[-1])
-                norm_clip = norm_clip.view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)
+                norm_clip = norm_clip[B:].view(B,T,-1,norm_clip.shape[-1]).mean(dim=2)
                 clip_output = (norm_clip @ clip_label_embedding.T)#.reshape(B,-1).mean(dim=-1).squeeze(0)
                 clip_label_conf = nn.functional.softmax(100.*clip_output, dim=-1).mean(dim=1)
                 clip_label_conf, clip_labels = clip_label_conf.max(-1)
@@ -162,18 +162,17 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
         #moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
         moco_loss = 0.
         with torch.cuda.amp.autocast():
-            outputs_clip = model(clip_videos[B:], mask=bool_masked_pos)
+            outputs_clip = model(clip_videos[B:], mask=bool_masked_pos[B:])
             perm = torch.randperm(clip_videos.shape[0])
             idx = perm[:4]
-            #_, domain_pred = model(clip_videos[idx], mask=None, training=True)
+            _, domain_pred = model(clip_videos[idx], mask=bool_masked_pos[idx], training=True)
             if target_mask.type(torch.int).sum() > 0: 
                 loss_target = criterion_target(outputs_clip[target_mask], target_labels[target_mask])
                 loss_target = (loss_target * target_conf[target_mask]).mean()
             else:
                 loss_target = torch.tensor(0.)
-            #domain_loss = criterion_domain(domain_pred, domain_targets[idx].type(torch.long))
-        domain_loss = torch.tensor(0.)
-        loss = loss+loss_target+(0.0*domain_loss)#+(0.1*moco_loss)
+            domain_loss = criterion_domain(domain_pred, domain_targets[idx].type(torch.long))
+        loss = loss+loss_target+(0.001*domain_loss)#+(0.1*moco_loss)
         loss_value = loss.detach().item()
         
         if not math.isfinite(loss_value):
