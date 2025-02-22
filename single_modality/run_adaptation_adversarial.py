@@ -643,6 +643,7 @@ def main(args, ds_init):
         if data_loader_val_src is not None:
             test_stats_src = validation_one_epoch(data_loader_val_src, model, device)
             test_stats_tgt = validation_one_epoch(data_loader_val_tgt, model, device)
+            top1 = test_stats_tgt["acc1"]
             timestep = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             print(f"[{timestep}] Accuracy of the network on the {len(dataset_val_src)} (source) val videos: {test_stats_src['acc1']:.1f}%")
             print(f"[{timestep}] Accuracy of the network on the {len(dataset_val_tgt)} (target) val videos: {test_stats_tgt['acc1']:.1f}%")
@@ -666,20 +667,20 @@ def main(args, ds_init):
             log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                          'epoch': epoch,
                          'n_parameters': n_parameters}
-        preds_file = os.path.join(args.output_dir, str(global_rank) + '.txt')
-        test_stats = final_test(data_loader_test, model, device, preds_file)
-        torch.distributed.barrier()
-        if global_rank == 0:
-            print("Start merging results...")
-            top1 ,top5 = merge(args.output_dir, num_tasks)
-            print(f"Accuracy of the network on the {len(dataset_test)} test videos: Top-1: {top1:.2f}%, Top-5: {top5:.2f}%")
-            log_stats.update({'multicrop-top-1': top1,'multicrop-top-5': top5})
-            if log_writer is not None:
-                log_writer.update(multicrop_top_1=top1, multicrop_top_5=top5, head="perf", step=epoch)
-            if args.output_dir and utils.is_main_process():
-                with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
-                    f.write(json.dumps(log_stats) + "\n")
-                    f.close()
+        # preds_file = os.path.join(args.output_dir, str(global_rank) + '.txt')
+        # test_stats = final_test(data_loader_test, model, device, preds_file)
+        # torch.distributed.barrier()
+        # if global_rank == 0:
+        #     print("Start merging results...")
+        #     top1 ,top5 = merge(args.output_dir, num_tasks)
+        #     print(f"Accuracy of the network on the {len(dataset_test)} test videos: Top-1: {top1:.2f}%, Top-5: {top5:.2f}%")
+        #     log_stats.update({'multicrop-top-1': top1,'multicrop-top-5': top5})
+        #     if log_writer is not None:
+        #         log_writer.update(multicrop_top_1=top1, multicrop_top_5=top5, head="perf", step=epoch)
+        #     if args.output_dir and utils.is_main_process():
+        #         with open(os.path.join(args.output_dir, "log.txt"), mode="a", encoding="utf-8") as f:
+        #             f.write(json.dumps(log_stats) + "\n")
+        #             f.close()
             if max_accuracy_tgt < top1:
                 max_accuracy_tgt = top1
                 if args.output_dir and args.save_ckpt:
