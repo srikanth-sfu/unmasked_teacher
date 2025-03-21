@@ -140,8 +140,6 @@ class Unit3D(nn.Module):
             
     def forward(self, x):
         # compute 'same' padding
-        print(x.shape)
-        x = x.view(x.shape[0], 8, 14, 14, x.shape[-1]).permute(0, 4, 1, 2, 3)
         (batch, channel, t, h, w) = x.size()
         #print t,h,w
         out_t = np.ceil(float(t) / float(self._stride[0]))
@@ -228,6 +226,7 @@ class InceptionModule(nn.Module):
         self.name = name
 
     def forward(self, x):    
+        x = x.view(x.shape[0], 8, 14, 14, x.shape[-1]).permute(0, 4, 1, 2, 3)       
         b0 = self.b0(x)
         #b1 = self.b1b(self.b1a(x))
         b2 = self.b2b(self.b2a(x))
