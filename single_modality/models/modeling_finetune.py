@@ -257,7 +257,6 @@ class Block(nn.Module):
         else:
             self.gamma_1, self.gamma_2 = None, None
         self.i3d_module = InceptionModule(dim,dim//2,"i3d_"+name)
-        print("I3D dimensions",dim)
 
     def forward(self, x):
         y = self.i3d_module(x)
@@ -267,7 +266,8 @@ class Block(nn.Module):
         else:
             x = x + self.drop_path(self.gamma_1 * self.attn(self.norm1(x)))
             x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
-            
+        
+        print(x.shape, y.shape, "I3d debugging")
         x = x + y
         return x, y
 
