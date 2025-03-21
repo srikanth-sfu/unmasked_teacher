@@ -110,7 +110,7 @@ def train_one_epoch(
 
         with torch.cuda.amp.autocast():
             unmasked = torch.zeros((src_tubelet.shape[0], bool_masked_pos.shape[-1])).type(torch.bool).to(device)
-            src_tubelet = model(src_tubelet, unmasked)
+            src_tubelet = model(src_tubelet, unmasked, return_i3d=True)
             moco_loss = moco(model.module, src_tubelet, tgt_tubelet, unmasked)["nce_loss"].mean()
 
         loss = (0.001*moco_loss)

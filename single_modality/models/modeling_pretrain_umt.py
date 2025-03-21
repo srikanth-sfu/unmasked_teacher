@@ -256,12 +256,12 @@ class PretrainVisionTransformer(nn.Module):
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token', 'mask_token', 'clip_mask_token', 'clip_pos_embed'}
 
-    def forward(self, x, mask=None):
+    def forward(self, x, mask, return_i3d=False):
         x_clip_vis, x_i3d = self.encoder(x, mask) # [B, N_vis, C_e]
         
         # align CLIP
-        if mask is None:
-            print("Returning i3d")
+        if return_i3d:
+            print("return i3d")
             return x_i3d
         K, B, _, C_CLIP = x_clip_vis.shape
         expand_clip_pos_embed = self.clip_pos_embed.repeat(B, 1, 1).type_as(x).to(x.device).clone().detach()

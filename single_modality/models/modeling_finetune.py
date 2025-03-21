@@ -267,7 +267,6 @@ class Block(nn.Module):
             x = x + self.drop_path(self.gamma_1 * self.attn(self.norm1(x)))
             x = x + self.drop_path(self.gamma_2 * self.mlp(self.norm2(x)))
         
-        print(x.shape, y.shape, "I3d debugging")
         x = x + y
         return x, y
 
