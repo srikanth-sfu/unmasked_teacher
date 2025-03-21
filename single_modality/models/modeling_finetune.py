@@ -215,7 +215,7 @@ class InceptionModule(nn.Module):
         #                   name=name+'/Branch_1/Conv3d_0a_1x1')
         # self.b1b = Unit3D(in_channels=out_channels[1], output_channels=out_channels[2], kernel_shape=[3, 3, 3],
         #                   name=name+'/Branch_1/Conv3d_0b_3x3')
-        self.b2a = Unit3D(in_channels=in_channels, output_channels=out_channels, kernel_shape=[1, 1, 1], padding=0,
+        self.b2a = Unit3D(in_channels=in_channels, output_channels=in_channels, kernel_shape=[1, 1, 1], padding=0,
                           name=name+'/Branch_2/Conv3d_0a_1x1')
         self.b2b = Unit3D(in_channels=in_channels, output_channels=out_channels, kernel_shape=[3, 3, 3],
                           name=name+'/Branch_2/Conv3d_0b_3x3')
