@@ -260,9 +260,8 @@ class PretrainVisionTransformer(nn.Module):
         x_clip_vis, x_i3d = self.encoder(x, mask) # [B, N_vis, C_e]
         
         # align CLIP
-        if return_i3d:
-            print("return i3d")
-            return x_i3d
+        #if return_i3d:
+        #    return x_i3d
         K, B, _, C_CLIP = x_clip_vis.shape
         expand_clip_pos_embed = self.clip_pos_embed.repeat(B, 1, 1).type_as(x).to(x.device).clone().detach()
         clip_pos_emd_vis = expand_clip_pos_embed[~mask].view(B, -1, C_CLIP).unsqueeze(0).repeat(K, 1, 1, 1)
