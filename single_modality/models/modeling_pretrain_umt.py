@@ -117,7 +117,6 @@ class PretrainVisionTransformerEncoder(nn.Module):
         x_clip_vis = []
         x_i3d = []
         for idx, blk in enumerate(self.blocks):
-            print("IDX........", idx)
             if self.use_checkpoint and idx < self.checkpoint_num:
                 x_vis, x_i3d_this = checkpoint.checkpoint(blk, x_vis)
             else:
@@ -262,6 +261,7 @@ class PretrainVisionTransformer(nn.Module):
         
         # align CLIP
         if mask is None:
+            print("Returning i3d")
             return x_i3d
         K, B, _, C_CLIP = x_clip_vis.shape
         expand_clip_pos_embed = self.clip_pos_embed.repeat(B, 1, 1).type_as(x).to(x.device).clone().detach()
