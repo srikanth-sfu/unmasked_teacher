@@ -232,7 +232,8 @@ class InceptionModule(nn.Module):
         #b1 = self.b1b(self.b1a(x))
         b2 = self.b2b(self.b2a(x))
         #b3 = self.b3b(self.b3a(x))
-        return torch.cat([b0,b2], dim=1)
+        out = torch.cat([b0,b2], dim=1)
+        return out.reshape(out.shape[0],out.shape[1], -1).permute(0,2,1)
         #return torch.cat([b0,b1,b2,b3], dim=1)
 
 
