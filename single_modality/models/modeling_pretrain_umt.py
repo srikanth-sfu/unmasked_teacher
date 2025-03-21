@@ -261,7 +261,7 @@ class PretrainVisionTransformer(nn.Module):
         
         # align CLIP
         if mask is None:
-            return x_clip_vis
+            return x_i3d
         K, B, _, C_CLIP = x_clip_vis.shape
         expand_clip_pos_embed = self.clip_pos_embed.repeat(B, 1, 1).type_as(x).to(x.device).clone().detach()
         clip_pos_emd_vis = expand_clip_pos_embed[~mask].view(B, -1, C_CLIP).unsqueeze(0).repeat(K, 1, 1, 1)
@@ -272,7 +272,7 @@ class PretrainVisionTransformer(nn.Module):
             x_clip.append(clip_decoder(x_clip_full[idx]))
         x_clip = torch.stack(x_clip) # align and normalize
         
-        return x_clip, x_i3d
+        return x_clip
     
 
 @register_model

@@ -28,7 +28,7 @@ cd $SLURM_TMPDIR
 
 git clone git@github.com:srikanth-sfu/unmasked_teacher.git
 cd unmasked_teacher
-git checkout tubelet_umt_s12
+git checkout tubelet_umt_s12_conv
 cd single_modality
 
 timeout 170m bash exp/pretraining/tubelet_b16_ptk600_f8_res224.sh
