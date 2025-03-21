@@ -68,7 +68,7 @@ class PretrainVisionTransformerEncoder(nn.Module):
             Block(
                 dim=embed_dim, num_heads=num_heads, mlp_ratio=mlp_ratio, qkv_bias=qkv_bias, qk_scale=qk_scale,
                 drop=drop_rate, attn_drop=attn_drop_rate, drop_path=dpr[i], norm_layer=norm_layer,
-                init_values=init_values)
+                init_values=init_values, name=str(i+1))
             for i in range(depth)])
         self.norm =  norm_layer(embed_dim)
         self.head = nn.Linear(embed_dim, num_classes) if num_classes > 0 else nn.Identity()
@@ -115,24 +115,25 @@ class PretrainVisionTransformerEncoder(nn.Module):
         else:
             x_vis = x
         x_clip_vis = []
-
+        x_i3d = []
         for idx, blk in enumerate(self.blocks):
             if self.use_checkpoint and idx < self.checkpoint_num:
-                x_vis = checkpoint.checkpoint(blk, x_vis)
+                x_vis, x_i3d_this = checkpoint.checkpoint(blk, x_vis)
             else:
-                x_vis = blk(x_vis)
+                x_vis, x_i3d_this = blk(x_vis)
             if idx in self.return_index:
                 x_clip_vis.append(x_vis)
-
+                x_i3d.append(x_i3d_this)
         x_vis = self.norm(x_vis)
         x_clip_vis = self.norm(torch.stack(x_clip_vis))
-        return x_vis, x_clip_vis
+        x_i3d = torch.stack(x_i3d)
+        return x_vis, x_clip_vis, x_i3d
 
     def forward(self, x, mask=None):
-        x, x_clip_vis = self.forward_features(x, mask)
+        x, x_clip_vis, x_i3d = self.forward_features(x, mask)
         x = self.head(x)
         x_clip_vis = self.head(x_clip_vis)
-        return x_clip_vis
+        return x_clip_vis, x_i3d
 
 
 class Linear_Decoder(nn.Module):
@@ -256,7 +257,7 @@ class PretrainVisionTransformer(nn.Module):
         return {'pos_embed', 'cls_token', 'mask_token', 'clip_mask_token', 'clip_pos_embed'}
 
     def forward(self, x, mask=None):
-        x_clip_vis = self.encoder(x, mask) # [B, N_vis, C_e]
+        x_clip_vis, x_i3d = self.encoder(x, mask) # [B, N_vis, C_e]
         
         # align CLIP
         if mask is None:
@@ -271,7 +272,7 @@ class PretrainVisionTransformer(nn.Module):
             x_clip.append(clip_decoder(x_clip_full[idx]))
         x_clip = torch.stack(x_clip) # align and normalize
         
-        return x_clip
+        return x_clip, x_i3d
     
 
 @register_model
