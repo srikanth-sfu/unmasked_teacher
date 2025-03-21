@@ -117,6 +117,7 @@ class PretrainVisionTransformerEncoder(nn.Module):
         x_clip_vis = []
         x_i3d = []
         for idx, blk in enumerate(self.blocks):
+            print("IDX........", idx)
             if self.use_checkpoint and idx < self.checkpoint_num:
                 x_vis, x_i3d_this = checkpoint.checkpoint(blk, x_vis)
             else:
