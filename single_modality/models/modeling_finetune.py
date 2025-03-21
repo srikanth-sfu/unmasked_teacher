@@ -140,7 +140,7 @@ class Unit3D(nn.Module):
             
     def forward(self, x):
         # compute 'same' padding
-        x = x.reshape(x.shape[0], x.shape[-1], 8, 14, 14)
+        x = x.view(x.shape[0], 8, 14, 14, x.shape[-1]).permute(0, 4, 1, 2, 3)
         (batch, channel, t, h, w) = x.size()
         #print t,h,w
         out_t = np.ceil(float(t) / float(self._stride[0]))
