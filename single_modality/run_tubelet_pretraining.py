@@ -16,7 +16,7 @@ from engines.engine_for_pretraining_tubelet import train_one_epoch
 from utils import NativeScalerWithGradNormCount as NativeScaler
 from utils import multiple_pretrain_samples_collate
 import utils
-from single_modality.moco import MoCo
+from moco import MoCo
 
 from tubelets import build_transform
 from models import *
