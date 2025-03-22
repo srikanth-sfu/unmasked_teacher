@@ -318,7 +318,9 @@ def main(args):
     utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix, strict=False)
     utils.load_state_dict(moco_model, checkpoint_model, prefix=args.model_prefix, strict=False)
     moco = MoCo(moco_model, args.clip_output_dim)
-    for name, param in moco.named_parameters():
+    for name, param in moco_model.named_parameters():
+        param.requires_grad = False
+    for name, param in moco.named_parameters():    
         if "key_fc" in name:
             param.requires_grad = False
 
@@ -392,7 +394,7 @@ def main(args):
 
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
-        moco = torch.nn.parallel.DataParallel(moco, device_ids=[args.gpu], find_unused_parameters=True)
+        moco = torch.nn.parallel.DistributedDataParallel(moco, device_ids=[args.gpu], find_unused_parameters=True)
         model_without_ddp = model.module
         moco_model_without_ddp = moco.module
         teacher_model = torch.nn.parallel.DistributedDataParallel(teacher_model, device_ids=[args.gpu], find_unused_parameters=False)
