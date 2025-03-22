@@ -1,7 +1,7 @@
 # Copyright (c) Facebook, Inc. and its affiliates. All Rights Reserved
 import torch
 import torch.nn as nn
-from .mixin import TrainStepMixin
+from mixin import TrainStepMixin
 
 class Flatten(nn.Module):
     def __init__(self):
