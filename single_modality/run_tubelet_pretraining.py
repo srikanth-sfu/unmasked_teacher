@@ -239,8 +239,10 @@ def main(args):
 
     cudnn.benchmark = True
 
-    model = get_model(args)
-    moco_model = get_model(args)
+    #model = get_model(args)
+    #moco_model = get_model(args)
+    model = InceptionI3d(400, in_channels=3)
+    moco_model = InceptionI3d(400, in_channels=3)
     for param in moco_model.parameters():
         param.requires_grad = False
     patch_size = model.encoder.patch_embed.patch_size
