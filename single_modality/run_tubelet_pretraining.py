@@ -16,7 +16,7 @@ from engines.engine_for_pretraining_tubelet import train_one_epoch
 from utils import NativeScalerWithGradNormCount as NativeScaler
 from utils import multiple_pretrain_samples_collate
 import utils
-from moco import MoCo
+from single_modality.moco import MoCo
 
 from tubelets import build_transform
 from models import *
@@ -245,11 +245,7 @@ def main(args):
     moco_model = InceptionI3d(400, in_channels=3)
     for param in moco_model.parameters():
         param.requires_grad = False
-    patch_size = model.encoder.patch_embed.patch_size
-    print("Patch size = %s" % str(patch_size))
     print("Tubelet size = %s" % str(args.tubelet_size))
-    args.window_size = (args.num_frames // args.tubelet_size, args.input_size // patch_size[0], args.input_size // patch_size[1])
-    args.patch_size = patch_size
 
     
     checkpoint = torch.load(args.k710_weights, map_location='cpu')
