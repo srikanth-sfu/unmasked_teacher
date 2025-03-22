@@ -392,7 +392,7 @@ def main(args):
 
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
-        moco = torch.nn.parallel.DistributedDataParallel(moco, device_ids=[args.gpu], find_unused_parameters=True)
+        moco = torch.nn.parallel.DataParallel(moco, device_ids=[args.gpu], find_unused_parameters=True)
         model_without_ddp = model.module
         moco_model_without_ddp = moco.module
         teacher_model = torch.nn.parallel.DistributedDataParallel(teacher_model, device_ids=[args.gpu], find_unused_parameters=False)
