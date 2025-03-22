@@ -64,56 +64,11 @@ def train_one_epoch(
         src_tubelet = src_tubelet.to(device, non_blocking=True)
         tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
 
-        if mask_type in ['attention']:
-            bool_masked_pos = None
-        else:
-            bool_masked_pos = bool_masked_pos.to(device, non_blocking=True).flatten(1).to(torch.bool)
-
-        with torch.no_grad():
-            # calculate the predicted CLIP features
-            B, C, T, H, W = videos.shape
-            if H != clip_input_resolution:
-                clip_videos = torch.nn.functional.interpolate(
-                    videos.view(B, C*T, H, W), 
-                    size=(clip_input_resolution, clip_input_resolution), 
-                    mode='bicubic', align_corners=False
-                )
-                clip_videos = clip_videos.view(B, C, T, clip_input_resolution, clip_input_resolution)
-            else:
-                clip_videos = videos
-            
-            with torch.cuda.amp.autocast():
-                if bool_masked_pos is None:
-                    norm_clip, attn = teacher_model(clip_videos)
-                else:
-                    norm_clip = teacher_model(clip_videos)
-
-            BT, N = attn.shape
-            N_vis = N - int(N * mask_ratio)
-            if mask_type == 'attention':
-                importance = torch.multinomial(attn, N)
-                bool_masked_pos = torch.ones((BT, N))
-                pos1 = torch.arange(BT).view(-1, 1).repeat(1, N_vis)
-                pos2 = importance[:, :N_vis]
-                bool_masked_pos[pos1, pos2] = 0
-                bool_masked_pos = bool_masked_pos.view(B, -1).to(torch.bool)
-                    
-            C_CLIP = norm_clip.shape[-1]
-            if len(norm_clip.shape) == 4:
-                K = norm_clip.shape[0]
-                clip_bool_masked_pos = bool_masked_pos.unsqueeze(0).repeat(K, 1, 1)
-                targets_clip_vis = norm_clip[~clip_bool_masked_pos].reshape(K, B, -1, C_CLIP)
-            else:
-                clip_bool_masked_pos = bool_masked_pos
-                targets_clip_vis = norm_clip[~clip_bool_masked_pos].reshape(B, -1, C_CLIP)
-            targets_clip = targets_clip_vis
-
         with torch.cuda.amp.autocast():
-            unmasked = torch.zeros((src_tubelet.shape[0], bool_masked_pos.shape[-1])).type(torch.bool).to(device)
-            src_tubelet = model(src_tubelet, unmasked, return_i3d=True)
-            moco_loss = moco(model.module, src_tubelet, tgt_tubelet, unmasked)["nce_loss"].mean()
+            src_tubelet = model(src_tubelet)
+            moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
 
-        loss = (0.001*moco_loss)
+        loss = (0.1*moco_loss)
         loss_value = loss.item()
         loss_pixel = torch.tensor(0.)
         loss_clip = torch.tensor(0.)
