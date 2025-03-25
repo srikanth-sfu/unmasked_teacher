@@ -2,6 +2,9 @@
 import torch
 import torch.nn as nn
 from mixin import TrainStepMixin
+import copy
+import torch.utils.checkpoint as checkpoint
+
 
 class Flatten(nn.Module):
     def __init__(self):
@@ -33,20 +36,104 @@ class MoCo(nn.Module, TrainStepMixin):
 
     def __init__(self,
                  model,
-                 out_channels: int,
-                 queue_size: int = 1024,
+                 in_channels: int,
+                 queue_size: int = 588,
                  momentum: float = 0.999,
                  temperature: float = 0.07):
         super(MoCo, self).__init__()
-        self.model = model
         self.K = queue_size
         self.m = momentum
         self.T = temperature
 
-        self.register_buffer("queue", torch.randn(out_channels, queue_size))
+        in_channels *= 6
+        self.register_buffer("queue", torch.randn(in_channels, queue_size))
         self.queue = nn.functional.normalize(self.queue, dim=0)
 
         self.register_buffer("queue_ptr", torch.zeros(1, dtype=torch.long))
+        self.key_encoder = model
+        
+#        self.fc = nn.Sequential(
+#            *[nn.TransformerEncoder(transformer_layer, num_layers=1) for _ in range(2)]
+#        )
+#        self.key_fc = nn.Sequential(
+#            *[nn.TransformerEncoder(transformer_layer, num_layers=1) for _ in range(2)]
+#        )
+#        self.positional_encoding = nn.Parameter(torch.randn(1568, in_channels))
+        self.fc = nn.Sequential(
+            nn.Linear(in_channels, in_channels),
+            nn.LeakyReLU(0.1),
+            nn.Dropout(0.2),
+            nn.Linear(in_channels, in_channels),
+        )
+        self.key_fc = nn.Sequential(
+            nn.Linear(in_channels, in_channels),
+            nn.LeakyReLU(0.1),
+            nn.Dropout(0.2),
+            nn.Linear(in_channels, in_channels),
+        )
+    
+    @torch.no_grad()
+    def _batch_shuffle_ddp(self, x):
+        """
+        Batch shuffle, for making use of BatchNorm.
+        *** Only support DistributedDataParallel (DDP) model. ***
+        """
+        # gather from all gpus
+        batch_size_this = x.shape[0]
+        x_gather = concat_all_gather(x)
+        batch_size_all = x_gather.shape[0]
+
+        num_gpus = batch_size_all // batch_size_this
+
+        # random shuffle index
+        idx_shuffle = torch.randperm(batch_size_all).cuda()
+
+        # broadcast to all gpus
+        torch.distributed.broadcast(idx_shuffle, src=0)
+
+        # index for restoring
+        idx_unshuffle = torch.argsort(idx_shuffle)
+
+        # shuffled index for this gpu
+        gpu_idx = torch.distributed.get_rank()
+        idx_this = idx_shuffle.view(num_gpus, -1)[gpu_idx]
+
+        return x_gather[idx_this], idx_unshuffle
+
+    @torch.no_grad()
+    def key_encoder_forward(self,clip_videos):
+        return self.key_encoder(clip_videos)
+
+    @torch.no_grad()
+    def _batch_unshuffle_ddp(self, x, idx_unshuffle):
+        """
+        Undo batch shuffle.
+        *** Only support DistributedDataParallel (DDP) model. ***
+        """
+        # gather from all gpus
+        batch_size_this = x.shape[0]
+        x_gather = concat_all_gather(x)
+        batch_size_all = x_gather.shape[0]
+
+        num_gpus = batch_size_all // batch_size_this
+
+        # restored index for this gpu
+        gpu_idx = torch.distributed.get_rank()
+        idx_this = idx_unshuffle.view(num_gpus, -1)[gpu_idx]
+
+        return x_gather[idx_this]
+
+    @torch.no_grad()
+    def _momentum_update_key_encoder(self, backbone):
+        """
+        Momentum update of the key encoder
+        """
+        for param_q, param_k in zip(backbone.parameters(),
+                                    self.key_encoder.parameters()):
+            param_k.data = param_k.data * self.m + param_q.data * (1. - self.m)
+        for param_q, param_k in zip(self.fc.parameters(),
+                                    self.key_fc.parameters()):
+            param_k.data = param_k.data * self.m + param_q.data * (1. - self.m)
 
     @torch.no_grad()
     def _dequeue_and_enqueue(self, keys):
@@ -56,7 +143,7 @@ class MoCo(nn.Module, TrainStepMixin):
 
         ptr = int(self.queue_ptr)
         assert self.K % batch_size == 0  # for simplicity
-
+        
         # replace the keys at ptr (dequeue and enqueue)
         self.queue[:, ptr:ptr + batch_size] = keys.transpose(0, 1)
         ptr = (ptr + batch_size) % self.K  # move pointer
@@ -64,34 +151,62 @@ class MoCo(nn.Module, TrainStepMixin):
         self.queue_ptr[0] = ptr
 
 
-    def forward(self, q, k):
+    def forward(self, model, q, k_in):
+        with(torch.cuda.amp.autocast()):
+            NS, B, _, _ = q.shape
+            NS = 1
+#            q = q.reshape(-1,q.shape[-2], q.shape[-1])
+#            q = q + self.positional_encoding
+#            q = q.transpose(0,1)
+#            q = self.fc(q)
+#            q = q.transpose(0,1)
+#            q = q.mean(dim=1)
+#            q = self.fc(q)
+#            q = nn.functional.normalize(q, dim=1)
+            q = q.permute(1,2,3,0)
+            q = q.reshape(q.shape[0], q.shape[1],-1)
+            q = q.reshape(-1,q.shape[-2], q.shape[-1])
+            q = q.mean(dim=1)
+            q = self.fc(q)
+            q = nn.functional.normalize(q, dim=1)
 
-        # q = nn.functional.normalize(q, dim=1)
+            # # compute key features
+            with torch.no_grad():
+                self._momentum_update_key_encoder(backbone=model)
+                im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
+                tgt_tubelet = self.key_encoder_forward(im_k)
+                tgt_tubelet = tgt_tubelet.permute(1,2,3,0)
+                tgt_tubelet = tgt_tubelet.reshape(B,tgt_tubelet.shape[1], -1)
+                k = tgt_tubelet.reshape(-1,tgt_tubelet.shape[-2], tgt_tubelet.shape[-1])
+                k = k.mean(dim=1)
+                k = self.key_fc(k)
+                k = nn.functional.normalize(k, dim=1).reshape(NS, B, -1)
+                k = torch.transpose(k, 1, 0)
+                k = k.contiguous()
+                k = self._batch_unshuffle_ddp(k, idx_unshuffle)
+                
 
-        # # compute key features
-        # with torch.no_grad():
-        #     k = nn.functional.normalize(k, dim=1)
+            # compute logits
+            # Einstein sum is more intuitive
+            # positive logits: Nx1
+            k = torch.transpose(k, 1, 0).reshape(B*NS, -1)
 
+            l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(-1)
+            # negative logits: NxK
+            l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
 
-        # compute logits
-        # Einstein sum is more intuitive
-        # positive logits: Nx1
-        l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(-1)
-        # negative logits: NxK
-        l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
+            # logits: Nx(1+K)
+            logits = torch.cat([l_pos, l_neg], dim=1)
 
-        # logits: Nx(1+K)
-        logits = torch.cat([l_pos, l_neg], dim=1)
+            # apply temperature
+            logits /= self.T
 
-        # apply temperature
-        logits /= self.T
+            # labels: positive key indicators
+            labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
+            nce_loss = nn.functional.cross_entropy(logits, labels)
 
-        # labels: positive key indicators
-        labels = torch.zeros(logits.shape[0], dtype=torch.long).cuda()
-        nce_loss = nn.functional.cross_entropy(logits, labels)
-
-        # dequeue and enqueue
-        self._dequeue_and_enqueue(k)
+            # dequeue and enqueue
+            self._dequeue_and_enqueue(k)
 
         return dict(nce_loss=nce_loss)
 
