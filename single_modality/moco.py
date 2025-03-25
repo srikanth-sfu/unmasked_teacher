@@ -153,20 +153,7 @@ class MoCo(nn.Module, TrainStepMixin):
 
     def forward(self, model, q, k_in):
         with(torch.cuda.amp.autocast()):
-            NS, B, _, _ = q.shape
-            NS = 1
-#            q = q.reshape(-1,q.shape[-2], q.shape[-1])
-#            q = q + self.positional_encoding
-#            q = q.transpose(0,1)
-#            q = self.fc(q)
-#            q = q.transpose(0,1)
-#            q = q.mean(dim=1)
-#            q = self.fc(q)
-#            q = nn.functional.normalize(q, dim=1)
-            q = q.permute(1,2,3,0)
-            q = q.reshape(q.shape[0], q.shape[1],-1)
-            q = q.reshape(-1,q.shape[-2], q.shape[-1])
-            q = q.mean(dim=1)
+            
             q = self.fc(q)
             q = nn.functional.normalize(q, dim=1)
 
@@ -174,14 +161,9 @@ class MoCo(nn.Module, TrainStepMixin):
             with torch.no_grad():
                 self._momentum_update_key_encoder(backbone=model)
                 im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
-                tgt_tubelet = self.key_encoder_forward(im_k)
-                tgt_tubelet = tgt_tubelet.permute(1,2,3,0)
-                tgt_tubelet = tgt_tubelet.reshape(B,tgt_tubelet.shape[1], -1)
-                k = tgt_tubelet.reshape(-1,tgt_tubelet.shape[-2], tgt_tubelet.shape[-1])
-                k = k.mean(dim=1)
+                k = self.key_encoder_forward(im_k)
                 k = self.key_fc(k)
-                k = nn.functional.normalize(k, dim=1).reshape(NS, B, -1)
-                k = torch.transpose(k, 1, 0)
+                k = nn.functional.normalize(k, dim=1)
                 k = k.contiguous()
                 k = self._batch_unshuffle_ddp(k, idx_unshuffle)
                 
@@ -189,8 +171,7 @@ class MoCo(nn.Module, TrainStepMixin):
             # compute logits
             # Einstein sum is more intuitive
             # positive logits: Nx1
-            k = torch.transpose(k, 1, 0).reshape(B*NS, -1)
-
+            
             l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(-1)
             # negative logits: NxK
             l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
