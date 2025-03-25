@@ -46,7 +46,7 @@ def train_one_epoch(
                     param_group["weight_decay"] = wd_schedule_values[it]
 
         videos, bool_masked_pos, videos_raw, targets = batch
-        num_rows = 7
+        num_rows = 32
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
         videos_raw = videos_raw[indices]
         feat_src_np, feat_tgt_np = torch.split(videos_raw, split_size_or_sections=1, dim=1)
@@ -54,12 +54,12 @@ def train_one_epoch(
 
         np.random.shuffle(feat_tgt_np)
         src_tubelet, tgt_tubelet = utils.transform_tubelet(feat_src_np, feat_tgt_np, tubelet_params)
-        mean = [0.48145466, 0.4578275, 0.40821073]
-        std = [0.26862954, 0.26130258, 0.27577711]
-        mean = torch.as_tensor(mean)
-        std = torch.as_tensor(std)
-        src_tubelet.sub_(mean[None, :, None, None, None]).div_(std[None, :, None, None, None])
-        tgt_tubelet.sub_(mean[None, :, None, None, None]).div_(std[None, :, None, None, None])
+#        mean = [0.48145466, 0.4578275, 0.40821073]
+#        std = [0.26862954, 0.26130258, 0.27577711]
+#        mean = torch.as_tensor(mean)
+#        std = torch.as_tensor(std)
+#        src_tubelet.sub_(mean[None, :, None, None, None]).div_(std[None, :, None, None, None])
+#        tgt_tubelet.sub_(mean[None, :, None, None, None]).div_(std[None, :, None, None, None])
         videos = videos.to(device, non_blocking=True)
         src_tubelet = src_tubelet.to(device, non_blocking=True)
         tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
@@ -67,7 +67,6 @@ def train_one_epoch(
         with torch.cuda.amp.autocast():
             src_tubelet = model(src_tubelet)
             moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
-
         loss = (0.1*moco_loss)
         loss_value = loss.item()
         loss_pixel = torch.tensor(0.)

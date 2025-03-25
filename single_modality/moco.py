@@ -37,7 +37,7 @@ class MoCo(nn.Module, TrainStepMixin):
     def __init__(self,
                  model,
                  in_channels: int,
-                 queue_size: int = 588,
+                 queue_size: int = 384,
                  momentum: float = 0.999,
                  temperature: float = 0.07):
         super(MoCo, self).__init__()
@@ -153,8 +153,6 @@ class MoCo(nn.Module, TrainStepMixin):
     def forward(self, model, q, k_in):
         with(torch.cuda.amp.autocast()):
             
-            print(q.shape)
-            os._exit(1)
             q = self.fc(q.squeeze(2).squeeze(2).squeeze(2))
             q = nn.functional.normalize(q, dim=1)
 
@@ -172,7 +170,6 @@ class MoCo(nn.Module, TrainStepMixin):
             # compute logits
             # Einstein sum is more intuitive
             # positive logits: Nx1
-            
             l_pos = torch.einsum('nc,nc->n', [q, k]).unsqueeze(-1)
             # negative logits: NxK
             l_neg = torch.einsum('nc,ck->nk', [q, self.queue.clone().detach()])
