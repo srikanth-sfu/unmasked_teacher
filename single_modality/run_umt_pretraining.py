@@ -21,6 +21,7 @@ from moco import MoCo
 from tubelets import build_transform
 from models import *
 from collections import OrderedDict
+from models.i3d_umt import InceptionI3d
 
 def get_args():
     parser = argparse.ArgumentParser('VideoMAE pre-training script', add_help=False)
@@ -315,8 +316,8 @@ def main(args):
             new_pos_embed = torch.cat((extra_tokens, pos_tokens), dim=1)
             checkpoint_model['pos_embed'] = new_pos_embed
 
-    utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix)
-    utils.load_state_dict(moco_model, checkpoint_model, prefix=args.model_prefix)
+    utils.load_state_dict(model, checkpoint_model, prefix=args.model_prefix, strict=False)
+    utils.load_state_dict(moco_model, checkpoint_model, prefix=args.model_prefix, strict=False)
     moco = MoCo(moco_model, args.clip_output_dim)
     for name, param in moco.named_parameters():
         if "key_fc" in name:
