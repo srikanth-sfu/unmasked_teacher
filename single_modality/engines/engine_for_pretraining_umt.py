@@ -99,10 +99,10 @@ def train_one_epoch(
             loss_pixel = torch.zeros(1).type_as(outputs_clip).to(outputs_clip.device)
             # align CLIP
             if clip_loss_type == 'l2':
-                print(outputs_clip.shape, targets_clip.shape)
-                loss_clip1 = (2 - 2 * (outputs_clip[:,2] * targets_clip[:,-1,::8]).sum(dim=-1)).mean()
-                loss_clip2 = (2 - 2 * (outputs_clip[:,1] * targets_clip[:,-3,::4]).sum(dim=-1)).mean()
-                loss_clip3 = (2 - 2 * (outputs_clip[:,0] * targets_clip[:,-5,::2]).sum(dim=-1)).mean()
+                print(outputs_clip.shape, norm_clip.shape)
+                loss_clip1 = (2 - 2 * (outputs_clip[:,2] * norm_clip[-1,:,::8]).sum(dim=-1)).mean()
+                loss_clip2 = (2 - 2 * (outputs_clip[:,1] * norm_clip[-3,:,::4]).sum(dim=-1)).mean()
+                loss_clip3 = (2 - 2 * (outputs_clip[:,0] * norm_clip[-5,:,::2]).sum(dim=-1)).mean()
                 loss_clip = (loss_clip1 + loss_clip2 + loss_clip3).mean()
             elif clip_loss_type in ['mse', 'smooth_l1']:
                 loss_clip1 = loss_func_clip(input=outputs_clip[:,2], target=targets_clip[:,0,::8])
