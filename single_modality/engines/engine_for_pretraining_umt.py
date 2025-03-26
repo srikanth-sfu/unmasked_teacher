@@ -98,6 +98,7 @@ def train_one_epoch(
             outputs_clip = model(videos, extract=True)            
             loss_pixel = torch.zeros(1).type_as(outputs_clip).to(outputs_clip.device)
             # align CLIP
+            clip_loss_type = "mse"
             if clip_loss_type == 'l2':
                 B, n_feat = norm_clip.shape[1], norm_clip.shape[-1]
                 loss_clip1 = (2 - 2 * (outputs_clip[:,2,:196] * norm_clip[-1].reshape(B, 8, 196, n_feat).mean(dim=1)).sum(dim=-1)).mean()
@@ -105,10 +106,10 @@ def train_one_epoch(
                 loss_clip3 = (2 - 2 * (outputs_clip[:,0,:784] * norm_clip[-5].reshape(B, 8, 196, n_feat)[:,::2].reshape(B, 784, n_feat)).sum(dim=-1)).mean()
                 loss_clip = (loss_clip1 + loss_clip2 + loss_clip3).mean()
             elif clip_loss_type in ['mse', 'smooth_l1']:
-                loss_clip1 = loss_func_clip(input=outputs_clip[:,2], target=targets_clip[:,0,::8])
-                loss_clip2 = loss_func_clip(input=outputs_clip[:,1], target=targets_clip[:,2,::4])
-                loss_clip3 = loss_func_clip(input=outputs_clip[:,0], target=targets_clip[:,4,::2])
-                loss_clip = (loss_clip1 + loss_clip2 + loss_clip3)
+                loss_clip1 = loss_func_clip(input=outputs_clip[:,2,:196], target=norm_clip[-1].reshape(B, 8, 196, n_feat).mean(dim=1))
+                loss_clip2 = loss_func_clip(input=outputs_clip[:,1,:392], target=norm_clip[-3].reshape(B, 8, 196, n_feat)[:,::4].reshape(B, 392, n_feat))
+                loss_clip3 = loss_func_clip(input=outputs_clip[:,0,:784], target=norm_clip[-5].reshape(B, 8, 196, n_feat)[:,::2].reshape(B, 784, n_feat))
+                loss_clip = (loss_clip1.mean() + loss_clip2.mean() + loss_clip3.mean())
                 #loss_clip = loss_func_clip(input=outputs_clip, target=targets_clip)
             else:
                 raise NotImplementedError
