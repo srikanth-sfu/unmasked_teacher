@@ -100,7 +100,7 @@ def train_one_epoch(
             # align CLIP
             if clip_loss_type == 'l2':
                 print(outputs_clip.shape, norm_clip.shape)
-                B, n_feat = norm_clip.shape[0], norm_clip.shape[-1]
+                B, n_feat = norm_clip.shape[1], norm_clip.shape[-1]
                 loss_clip1 = (2 - 2 * (outputs_clip[:,2,:196] * norm_clip[-1].view(B, 8, 196, n_feat).mean(dim=1)).sum(dim=-1)).mean()
                 loss_clip2 = (2 - 2 * (outputs_clip[:,1,:392] * norm_clip[-3].view(B, 8, 196, n_feat)[:,::4].view(B, 392, n_feat)).sum(dim=-1)).mean()
                 loss_clip3 = (2 - 2 * (outputs_clip[:,0,:784] * norm_clip[-5].view(B, 8, 196, n_feat)[:,::2].view(B, 784, n_feat)).sum(dim=-1)).mean()
