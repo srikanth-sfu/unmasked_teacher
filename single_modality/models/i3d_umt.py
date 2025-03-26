@@ -379,8 +379,8 @@ class InceptionI3d(nn.Module):
             feat_resized = F.interpolate(feat_reshaped, size=(h1, w1), mode='bilinear', align_corners=False)
             feat_resized = feat_resized.view(n, c, t, h1, w1).view(n, c, t*h1*w1)
             feat_resized = feat_resized.permute(0,2,1)
-            out.append(feat_resized)
-        return out
+            out.append(feat_resized.unsqueeze(1))
+        return torch.cat(out, dim=1)
 
     def extract_features(self, x):
         for end_point in self.VALID_ENDPOINTS:
