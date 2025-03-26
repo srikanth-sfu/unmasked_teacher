@@ -349,7 +349,7 @@ class InceptionI3d(nn.Module):
         for k in self.end_points.keys():
             self.add_module(k, self.end_points[k])
         for k in self.end_points_umt.keys():
-            self.add_module(k, self.end_points_umt)
+            self.add_module(k, self.end_points_umt[k])
         
     def forward(self, x, extract=False):
         out_feats = []
