@@ -356,8 +356,9 @@ class InceptionI3d(nn.Module):
         for end_point in self.VALID_ENDPOINTS:
             if end_point in self.end_points:
                 x = self._modules[end_point](x) # use _modules to work with dataparallel
-            if end_point in self.VALID_ENDPOINTS_UMT:
-                feat = self.end_points_umt[end_point](x)
+            if end_point in self.INPUTS_UMT:
+                end_point_umt = self.VALID_ENDPOINTS_UMT[self.INPUTS_UMT.index(end_point)]
+                feat = self.end_points_umt[end_point_umt](x)
                 out_feats.append(feat)
         if extract:
             return self.transform_umt(out_feats) 
