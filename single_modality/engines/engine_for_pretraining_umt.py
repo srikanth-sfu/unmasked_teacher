@@ -96,9 +96,10 @@ def train_one_epoch(
 
         with torch.cuda.amp.autocast():
             outputs_clip = model(videos, extract=True)
+            print(targets_clip.shape, outputs_clip.shape)
+            
             loss_pixel = torch.zeros(1).type_as(outputs_clip).to(outputs_clip.device)
             # align CLIP
-            print(targets_clip.shape, outputs_clip.shape)
             if clip_loss_type == 'l2':
                 loss_clip = (2 - 2 * (outputs_clip * targets_clip).sum(dim=-1)).mean()
             elif clip_loss_type in ['mse', 'smooth_l1']:
