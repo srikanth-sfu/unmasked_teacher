@@ -376,10 +376,10 @@ class InceptionI3d(nn.Module):
         for feat in feats:
             n, c, t, h, w = feat.shape
             h1, w1 = 14, 14
+            factor = 4 // t
             feat_reshaped = feat.permute(0,2,1,3,4).reshape(n*t, c, h, w)
             feat_resized = F.interpolate(feat_reshaped, size=(h1, w1), mode='bilinear', align_corners=False)
-            print(feat_resized.shape,n,c,t,h,w)
-            feat_resized = feat_resized.view(n, c, t, h1, w1).view(n, c, t*h1*w1)
+            feat_resized = feat_resized.view(n, c, t, h1, w1).repeat(1,1,factor,1,1).view(n, c, factor*t*h1*w1)
             feat_resized = feat_resized.permute(0,2,1)
             out.append(feat_resized.unsqueeze(1))
         return torch.cat(out, dim=1)
