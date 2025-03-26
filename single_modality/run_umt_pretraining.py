@@ -248,7 +248,7 @@ def main(args):
     checkpoint = torch.load(args.k710_weights, map_location='cpu')
 
     print("Load ckpt from %s" % args.k710_weights)
-    # checkpoint_model = None
+    checkpoint_model = checkpoint
     # for model_key in args.model_key.split('|'):
     #     if model_key in checkpoint:
     #         checkpoint_model = checkpoint[model_key]
