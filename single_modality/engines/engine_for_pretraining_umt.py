@@ -95,15 +95,17 @@ def train_one_epoch(
             targets_clip = targets_clip_vis
 
         with torch.cuda.amp.autocast():
-            outputs_clip = model(videos, extract=True)
-            print(targets_clip.shape, outputs_clip.shape)
-            
+            outputs_clip = model(videos, extract=True)            
             loss_pixel = torch.zeros(1).type_as(outputs_clip).to(outputs_clip.device)
             # align CLIP
             if clip_loss_type == 'l2':
                 loss_clip = (2 - 2 * (outputs_clip * targets_clip).sum(dim=-1)).mean()
             elif clip_loss_type in ['mse', 'smooth_l1']:
-                loss_clip = loss_func_clip(input=outputs_clip, target=targets_clip)
+                loss_clip1 = loss_func_clip(input=outputs_clip[:,2], target=targets_clip[:,0,::8])
+                loss_clip2 = loss_func_clip(input=outputs_clip[:,1], target=targets_clip[:,2,::4])
+                loss_clip3 = loss_func_clip(input=outputs_clip[:,0], target=targets_clip[:,4,::2])
+                loss_clip = (loss_clip1 + loss_clip2 + loss_clip3)
+                #loss_clip = loss_func_clip(input=outputs_clip, target=targets_clip)
             else:
                 raise NotImplementedError
 
