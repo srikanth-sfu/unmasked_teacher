@@ -26,7 +26,7 @@ python -u -m torch.distributed.launch --nproc_per_node 4 run_tubelet_pretraining
     --clip_loss_ratio 1 \
     --clip_loss_type 'l2' \
     --clip_decoder_embed_dim 768 \
-    --clip_output_dim 512 \
+    --clip_output_dim 96 \
     --clip_norm_type 'l2' \
     --clip_return_attn True \
     --clip_return_layer 6 \
