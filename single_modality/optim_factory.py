@@ -81,11 +81,10 @@ def get_parameter_groups(
                     scale = get_layer_scale
                 else:
                     scale = get_layer_scale(layer_id)
-            elif "temporal" in name:
-                scale = 20.
             else:
                 scale = 1.
-
+            if "temporal" in name:
+                scale = 20.
             parameter_group_names[group_name] = {
                 "weight_decay": this_weight_decay,
                 "params": [],
