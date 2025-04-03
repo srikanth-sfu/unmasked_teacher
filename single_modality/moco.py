@@ -198,7 +198,7 @@ def concat_all_gather(tensor):
     """
     tensors_gather = [torch.ones_like(tensor).contiguous()
         for _ in range(torch.distributed.get_world_size())]
-    torch.distributed.all_gather(tensors_gather, tensor, async_op=False)
+    torch.distributed.all_gather(tensors_gather, tensor.contiguous(), async_op=False)
 
     output = torch.cat(tensors_gather, dim=0)
     return output
