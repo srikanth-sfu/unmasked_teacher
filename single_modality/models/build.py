@@ -1,9 +1,7 @@
 from timm.models import create_model
 from . import videofocalnet
 
-def build_model(config):
-    model_type = config.MODEL.TYPE
-    is_pretrained = config.MODEL.PRETRAINED 
+def build_model(model_type,is_pretrained):
     print(f"Creating model: {model_type}")
     
     if "focal" in model_type:

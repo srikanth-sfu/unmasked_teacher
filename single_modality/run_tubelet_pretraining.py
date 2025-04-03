@@ -241,8 +241,8 @@ def main(args):
 
     #model = get_model(args)
     #moco_model = get_model(args)
-    model = build_model(type="videofocalnet_tiny", pretrained=True)
-    moco_model = build_model(type="videofocalnet_tiny", pretrained=True)
+    model = build_model(model_type="videofocalnet_tiny", is_pretrained=True)
+    moco_model = build_model(model_type="videofocalnet_tiny", is_pretrained=True)
     for param in moco_model.parameters():
         param.requires_grad = False
     print("Tubelet size = %s" % str(args.tubelet_size))
