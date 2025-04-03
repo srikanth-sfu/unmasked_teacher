@@ -68,6 +68,7 @@ def get_parameter_groups(
             this_weight_decay = weight_decay
         elif "block" in name or "downsample" in name or "patch_embed" in name:
             group_name = "spatial"
+            this_weight_decay = weight_decay
         elif len(param.shape) == 1 or name.endswith(".bias") or name in skip_list:
             group_name = "no_decay"
             this_weight_decay = 0.
