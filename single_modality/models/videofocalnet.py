@@ -531,7 +531,7 @@ class VideoFocalNet(nn.Module):
         H = W = int(math.sqrt(L))
         T = self.num_frames
         x1 = self.i3d_block(x.reshape(B, T, L, C).permute(0,3,1,2).reshape(B, C, T, H, W))
-        x = x + x1.permute(0,2,1,3,4).reshape(B*T, C, x1.shape[-1])
+        x = x + x1.permute(0,2,1,3,4).reshape(B*T, C, H*w)
         x = self.avgpool(x.transpose(1, 2))  # B C 1
         
         x = torch.flatten(x, 1)
