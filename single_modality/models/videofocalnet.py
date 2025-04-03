@@ -517,7 +517,7 @@ class VideoFocalNet(nn.Module):
         return {''}
 
     def forward_features(self, x):
-        B, T, _, H, W = x.shape
+        B = x.shape[0] // self.num_frames
         x, H, W = self.patch_embed(x)
         x = self.pos_drop(x)
 
