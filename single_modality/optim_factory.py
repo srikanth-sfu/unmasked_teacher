@@ -66,6 +66,8 @@ def get_parameter_groups(
         if "temporal" in name:
             group_name = "temporal"
             this_weight_decay = weight_decay
+        elif "block" in name:
+            group_name = "spatial"
         elif len(param.shape) == 1 or name.endswith(".bias") or name in skip_list:
             group_name = "no_decay"
             this_weight_decay = 0.
@@ -81,6 +83,8 @@ def get_parameter_groups(
         if group_name not in parameter_group_names:
             if group_name == "temporal":
                 scale = 1.
+            elif group_name == "spatial":
+                scale = 0.
             elif get_layer_scale is not None:
                 if isinstance(get_layer_scale, int):
                     scale = get_layer_scale
