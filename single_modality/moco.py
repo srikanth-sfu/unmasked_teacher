@@ -152,8 +152,7 @@ class MoCo(nn.Module, TrainStepMixin):
 
     def forward(self, model, q, k_in):
         with(torch.cuda.amp.autocast()):
-            print(q.shape)
-            q = self.fc(q.squeeze(2).squeeze(2).squeeze(2))
+            q = self.fc(q)
             q = nn.functional.normalize(q, dim=1)
 
             # # compute key features
@@ -161,7 +160,7 @@ class MoCo(nn.Module, TrainStepMixin):
                 self._momentum_update_key_encoder(backbone=model)
                 im_k, idx_unshuffle = self._batch_shuffle_ddp(k_in)
                 k = self.key_encoder_forward(im_k)
-                k = self.key_fc(k.squeeze(2).squeeze(2).squeeze(2))
+                k = self.key_fc(k)
                 k = nn.functional.normalize(k, dim=1)
                 k = k.contiguous()
                 k = self._batch_unshuffle_ddp(k, idx_unshuffle)
