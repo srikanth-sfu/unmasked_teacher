@@ -493,7 +493,10 @@ class VideoFocalNet(nn.Module):
             self.layers.append(layer)
 
         self.norm = norm_layer(self.num_features)
-        self.i3d_block = InceptionModule(49,[256,160,320,32,128,128], "i3d_module")
+        self.i3d_block = nn.Sequential(
+            InceptionModule(768,[256,160,320,32,128,128], "i3d_module"),
+            nn.Conv3d(256+320+128+128, 768, kernel_size=1)
+        )
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
 
