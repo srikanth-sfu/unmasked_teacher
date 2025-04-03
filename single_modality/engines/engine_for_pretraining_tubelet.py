@@ -46,7 +46,7 @@ def train_one_epoch(
                     param_group["weight_decay"] = wd_schedule_values[it]
 
         videos, bool_masked_pos, videos_raw, targets = batch
-        num_rows = 32
+        num_rows = min(32, videos.shape[0])
         indices = torch.randint(0, videos_raw.size(0), (num_rows,))
         videos_raw = videos_raw[indices]
         feat_src_np, feat_tgt_np = torch.split(videos_raw, split_size_or_sections=1, dim=1)
