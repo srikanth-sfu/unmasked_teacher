@@ -80,7 +80,7 @@ def get_parameter_groups(
 
         if group_name not in parameter_group_names:
             if group_name == "temporal":
-                scale = 10.
+                scale = 100.
             elif get_layer_scale is not None:
                 if isinstance(get_layer_scale, int):
                     scale = get_layer_scale
