@@ -17,6 +17,8 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
 from timm.data import create_transform
 from timm.data.transforms import str_to_pil_interp
 from einops import rearrange
+from .i3d import InceptionModule
+import math
 
 class Mlp(nn.Module):
     def __init__(self, in_features, hidden_features=None, out_features=None, act_layer=nn.GELU, drop=0.):
@@ -491,6 +493,7 @@ class VideoFocalNet(nn.Module):
             self.layers.append(layer)
 
         self.norm = norm_layer(self.num_features)
+        self.i3d_block = InceptionModule(49,[256,160,320,32,128,128], "i3d_module")
         self.avgpool = nn.AdaptiveAvgPool1d(1)
         self.head = nn.Linear(self.num_features, num_classes) if num_classes > 0 else nn.Identity()
 
@@ -514,14 +517,21 @@ class VideoFocalNet(nn.Module):
         return {''}
 
     def forward_features(self, x):
+        B, T, _, H, W = x.shape
         x, H, W = self.patch_embed(x)
         x = self.pos_drop(x)
 
         for layer in self.layers:
             x, H, W = layer(x, H, W)
         x = self.norm(x)  # B L C
+        L, C = x.shape[-2], x.shape[-1]
+        H = W = int(math.sqrt(L))
+        x1 = self.i3d_block(x.reshape(B, T, L, C).permute(0,3,1,2).reshape(B, C, T, H, W))
+        x = x + x1.permute(0,2,1,3,4).reshape(B*T, C, x1.shape[-1])
         x = self.avgpool(x.transpose(1, 2))  # B C 1
+        
         x = torch.flatten(x, 1)
+        
         return x
 
     def forward(self, x):

@@ -85,7 +85,7 @@ def get_parameter_groups(
             if group_name == "temporal":
                 scale = 1.
             elif group_name == "spatial":
-                scale = 0.
+                scale = 1.
             elif get_layer_scale is not None:
                 if isinstance(get_layer_scale, int):
                     scale = get_layer_scale
