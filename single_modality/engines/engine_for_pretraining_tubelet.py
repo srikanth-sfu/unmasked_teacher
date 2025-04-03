@@ -65,6 +65,8 @@ def train_one_epoch(
         tgt_tubelet = tgt_tubelet.to(device, non_blocking=True)
 
         with torch.cuda.amp.autocast():
+            src_tubelet = src_tubelet.permute(0,2,1,3,4)
+            tgt_tubelet = tgt_tubelet.permute(0,2,1,3,4)
             src_tubelet = model(src_tubelet)
             moco_loss = moco(model.module, src_tubelet, tgt_tubelet)["nce_loss"].mean()
         loss = (0.1*moco_loss)
