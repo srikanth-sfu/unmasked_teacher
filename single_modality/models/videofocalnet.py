@@ -583,7 +583,7 @@ def videofocalnet_tiny(pretrained=False, **kwargs):
     if pretrained:
         url = model_urls['videofocalnet_tiny']
         checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu", check_hash=True)
-        model.load_state_dict(checkpoint["model"])
+        model.load_state_dict(checkpoint["model"], strict=False)
     return model
 
 @register_model
@@ -592,7 +592,7 @@ def videofocalnet_small(pretrained=False, **kwargs):
     if pretrained:
         url = model_urls['videofocalnet_small']
         checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
-        model.load_state_dict(checkpoint["model"])
+        model.load_state_dict(checkpoint["model"], strict=False)
     return model
 
 @register_model
@@ -601,7 +601,7 @@ def videofocalnet_base(pretrained=False, **kwargs):
     if pretrained:
         url = model_urls['videofocalnet_base']
         checkpoint = torch.hub.load_state_dict_from_url(url=url, map_location="cpu")
-        model.load_state_dict(checkpoint["model"])
+        model.load_state_dict(checkpoint["model"], strict=False)
     return model
 
 
