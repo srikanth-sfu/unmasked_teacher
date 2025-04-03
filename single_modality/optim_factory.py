@@ -63,7 +63,10 @@ def get_parameter_groups(
     for name, param in model.named_parameters():
         if not param.requires_grad:
             continue  # frozen weights
-        if len(param.shape) == 1 or name.endswith(".bias") or name in skip_list:
+        if "temporal" in name:
+            group_name = "temporal"
+            this_weight_decay = weight_decay
+        elif len(param.shape) == 1 or name.endswith(".bias") or name in skip_list:
             group_name = "no_decay"
             this_weight_decay = 0.
         else:
@@ -76,15 +79,15 @@ def get_parameter_groups(
             layer_id = None
 
         if group_name not in parameter_group_names:
-            if get_layer_scale is not None:
+            if group_name == "temporal":
+                scale = 10.
+            elif get_layer_scale is not None:
                 if isinstance(get_layer_scale, int):
                     scale = get_layer_scale
                 else:
                     scale = get_layer_scale(layer_id)
             else:
                 scale = 1.
-            if "temporal" in name:
-                scale = 20.
             parameter_group_names[group_name] = {
                 "weight_decay": this_weight_decay,
                 "params": [],
