@@ -531,7 +531,7 @@ class VideoFocalNet(nn.Module):
         H = W = int(math.sqrt(L))
         T = self.num_frames
         x1 = self.i3d_block(x.reshape(B, T, L, C).permute(0,3,1,2).reshape(B, C, T, H, W))
-        x = x + x1.permute(0,2,1,3,4).reshape(B*T, C, H*w)
+        x = x + x1.permute(0,2,1,3,4).reshape(B*T, C, H*W).permute(0,2,1)
         x = self.avgpool(x.transpose(1, 2))  # B C 1
         
         x = torch.flatten(x, 1)
@@ -620,4 +620,6 @@ def videofocalnet_base(pretrained=False, **kwargs):
 
 
 if __name__ == '__main__':
-    print('test')
+    model = videofocalnet_tiny(pretrained=True, num_classes=0)
+    in_data = torch.rand(1,8,3,224,224)
+    print(model(in_data).shape)
