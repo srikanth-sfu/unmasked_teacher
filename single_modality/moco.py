@@ -152,7 +152,7 @@ class MoCo(nn.Module, TrainStepMixin):
 
     def forward(self, model, q, k_in):
         with(torch.cuda.amp.autocast()):
-            
+            print(q.shape)
             q = self.fc(q.squeeze(2).squeeze(2).squeeze(2))
             q = nn.functional.normalize(q, dim=1)
 
