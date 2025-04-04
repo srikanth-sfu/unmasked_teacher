@@ -241,8 +241,10 @@ def main(args):
 
     #model = get_model(args)
     #moco_model = get_model(args)
-    model = build_model(model_type="videofocalnet_tiny", is_pretrained=True, num_classes=0)
-    moco_model = build_model(model_type="videofocalnet_tiny", is_pretrained=True, num_classes=0)
+    #model = build_model(model_type="videofocalnet_tiny", is_pretrained=True, num_classes=0)
+    #moco_model = build_model(model_type="videofocalnet_tiny", is_pretrained=True, num_classes=0)
+    model = ResNet("M")
+    moco_model = ResNet("M")
     for param in moco_model.parameters():
         param.requires_grad = False
     print("Tubelet size = %s" % str(args.tubelet_size))
