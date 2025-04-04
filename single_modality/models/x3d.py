@@ -235,7 +235,7 @@ class ResNet(nn.Module):
                                padding=(0, 0, 0),
                                bias=False)
         self.bn5 = SubBatchNorm3d(num_splits=self.base_bn_splits, num_features=block_inplanes[3][0], affine=True) #nn.BatchNorm3d(block_inplanes[3][0])
-        if task == 'class':
+        if task == 'class' or task == "pt":
             self.avgpool = nn.AdaptiveAvgPool3d((1, 1, 1))
         elif task == 'loc':
             self.avgpool = nn.AdaptiveAvgPool3d((None, 1, 1))
@@ -329,7 +329,9 @@ class ResNet(nn.Module):
         x = self.relu(x)
 
         x = self.avgpool(x)
-
+        if self.task == "pt":
+            return x
+        
         x = self.fc1(x)
         x = self.relu(x)
 
