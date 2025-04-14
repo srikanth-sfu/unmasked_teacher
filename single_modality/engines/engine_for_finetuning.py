@@ -13,6 +13,8 @@ from scipy.special import softmax
 
 def train_class_batch(model, samples, target, criterion):
     outputs = model(samples)
+    print(outputs.shape)
+    os._exit(1)
     loss = criterion(outputs, target)
     return loss, outputs
 
