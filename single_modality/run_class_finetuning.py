@@ -337,7 +337,7 @@ def main(args, ds_init):
             prob=args.mixup_prob, switch_prob=args.mixup_switch_prob, mode=args.mixup_mode,
             label_smoothing=args.smoothing, num_classes=args.nb_classes)
 
-    model = InceptionI3d(args.nb_classes, in_channels=3)
+    model = InceptionI3d(args.nb_classes+1, in_channels=3)
 
     
     checkpoint = torch.load(args.finetune, map_location='cpu')
@@ -379,7 +379,7 @@ def main(args, ds_init):
     #skip_weight_decay_list = model.no_weight_decay()
     #print("Skip weight decay list: ", skip_weight_decay_list)
     skip_weight_decay_list = []
-    
+
     if args.enable_deepspeed:
         loss_scaler = None
         optimizer_params = get_parameter_groups(
