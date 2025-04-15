@@ -26,7 +26,7 @@ python -m torch.distributed.launch --nproc_per_node 4 run_class_finetuning.py \
         --warmup_iterations 4000 \
         --iterations 20000 \
         --tubelet_size 1 \
-        --lr 2.5e-5 \
+        --lr 2.5e-4 \
         --drop_path 0.1 \
         --opt adamw \
         --opt_betas 0.9 0.999 \
